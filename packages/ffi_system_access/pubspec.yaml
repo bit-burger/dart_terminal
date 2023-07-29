@@ -1,0 +1,13 @@
+name: ffi_system_access
+description: Access the system function from c.
+version: 1.0.0
+
+dependencies:
+  path: ^1.8.3
+  ffi: ^2.0.2
+  ansi_escapes: ^1.1.0
+  ansicolor: ^2.0.1
+  ansi_styles: ^0.3.2+1
+
+environment:
+  sdk: ^3.0.2
