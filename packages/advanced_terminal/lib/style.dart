@@ -17,29 +17,29 @@ abstract class TerminalColor {
   /// Custom implementations should avoid the ranges of
   /// the library classes, by starting at 20,000,000,
   /// or under 0.
-  final int _comparisonCode;
+  final int comparisonCode;
 
   const TerminalColor({
     required int comparisonCode,
     required this.rgbRep,
     required this.termRepForeground,
     required this.termRepBackground,
-  })  : _comparisonCode = comparisonCode,
+  })  : comparisonCode = comparisonCode,
         assert(comparisonCode < 0 || comparisonCode > 20000000);
 
   const TerminalColor._(
     this.rgbRep,
     this.termRepForeground,
     this.termRepBackground,
-    this._comparisonCode,
+    this.comparisonCode,
   );
 
   @override
   bool operator ==(Object other) =>
-      other is TerminalColor && _comparisonCode == other._comparisonCode;
+      other is TerminalColor && comparisonCode == other.comparisonCode;
 
   @override
-  int get hashCode => _comparisonCode;
+  int get hashCode => comparisonCode;
 }
 
 /// A decoration of the foreground,
@@ -107,13 +107,13 @@ class TextDecorationSet {
     bool slowBlink = false,
     bool fastBlink = false,
     bool crossedOut = false,
-  }) : bitField = ((intense ? 1 : 0) << 0) &
-            ((faint ? 1 : 0) << 1) &
-            ((italic ? 1 : 0) << 2) &
-            ((underline ? 1 : 0) << 3) &
-            ((doubleUnderline ? 1 : 0) << 4) &
-            ((slowBlink ? 1 : 0) << 5) &
-            ((fastBlink ? 1 : 0) << 6) &
+  }) : bitField = ((intense ? 1 : 0) << 0) +
+            ((faint ? 1 : 0) << 1) +
+            ((italic ? 1 : 0) << 2) +
+            ((underline ? 1 : 0) << 3) +
+            ((doubleUnderline ? 1 : 0) << 4) +
+            ((slowBlink ? 1 : 0) << 5) +
+            ((fastBlink ? 1 : 0) << 6) +
             ((crossedOut ? 1 : 0) << 7);
 
   const TextDecorationSet._decorationNumber(int decorationNumber)
@@ -160,11 +160,11 @@ class TerminalForegroundStyle {
   @override
   bool operator ==(Object other) =>
       other is TerminalForegroundStyle &&
-      color._comparisonCode == other.color._comparisonCode &&
+      color.comparisonCode == other.color.comparisonCode &&
       textDecorations.bitField == other.textDecorations.bitField;
 
   @override
-  int get hashCode => color._comparisonCode << 8 + textDecorations.bitField;
+  int get hashCode => color.comparisonCode << 8 + textDecorations.bitField;
 }
 
 /// Default terminal color.

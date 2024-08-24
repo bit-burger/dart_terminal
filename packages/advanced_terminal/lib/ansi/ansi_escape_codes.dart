@@ -39,6 +39,11 @@ const String restoreCursorPositionSCO = '\x1B[u';
 const String hideCursor = '\x1B[?25l';
 const String showCursor = '\x1B[?25h';
 
+/// Change Window
+String changeWindowDimension(int width, int height) =>
+    '\x1b[8;$height;${width}t';
+String changeTerminalTitle(String title) => '\x1b]0;$title\x07';
+
 /// Erase Functions
 const String eraseScreenFromCursor = '\x1B[J';
 const String eraseScreenToCursor = '\x1B[1J';
@@ -104,16 +109,35 @@ String keyboardString(String code) => '\x1B[${code}~';
 /// Common function keys
 String fKey(int n) => keyboardString('1${n - 1}');
 final Map<String, String> keyboardCodes = {
-  'F1': '0;59', 'F2': '0;60', 'F3': '0;61', 'F4': '0;62',
-  'F5': '0;63', 'F6': '0;64', 'F7': '0;65', 'F8': '0;66',
-  'F9': '0;67', 'F10': '0;68', 'F11': '0;133', 'F12': '0;134',
-  'HOME': '0;71', 'UP': '0;72', 'PGUP': '0;73',
-  'LEFT': '0;75', 'RIGHT': '0;77', 'END': '0;79',
-  'DOWN': '0;80', 'PGDN': '0;81', 'INS': '0;82', 'DEL': '0;83',
-  'ENTER': '13', 'BACKSPACE': '8', 'TAB': '9',
+  'F1': '0;59',
+  'F2': '0;60',
+  'F3': '0;61',
+  'F4': '0;62',
+  'F5': '0;63',
+  'F6': '0;64',
+  'F7': '0;65',
+  'F8': '0;66',
+  'F9': '0;67',
+  'F10': '0;68',
+  'F11': '0;133',
+  'F12': '0;134',
+  'HOME': '0;71',
+  'UP': '0;72',
+  'PGUP': '0;73',
+  'LEFT': '0;75',
+  'RIGHT': '0;77',
+  'END': '0;79',
+  'DOWN': '0;80',
+  'PGDN': '0;81',
+  'INS': '0;82',
+  'DEL': '0;83',
+  'ENTER': '13',
+  'BACKSPACE': '8',
+  'TAB': '9',
 };
 
-String keyCode(String key, {bool shift = false, bool ctrl = false, bool alt = false}) {
+String keyCode(String key,
+    {bool shift = false, bool ctrl = false, bool alt = false}) {
   if (!keyboardCodes.containsKey(key)) return '';
   String baseCode = keyboardCodes[key]!;
   if (shift) baseCode = '0;${int.parse(baseCode.split(';')[1]) + 25}';
