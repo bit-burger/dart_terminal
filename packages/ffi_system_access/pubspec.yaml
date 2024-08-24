@@ -8,6 +8,7 @@ dependencies:
   ansi_escapes: ^1.1.0
   ansicolor: ^2.0.1
   ansi_styles: ^0.3.2+1
+  meta: ^1.15.0
 
 environment:
   sdk: ^3.0.2

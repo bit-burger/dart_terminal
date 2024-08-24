@@ -68,4 +68,8 @@ class TerminalEscapeCodeWriter {
         ..write("H");
     }
   }
+
+  void flush() {
+    terminalWriter.flush();
+  }
 }

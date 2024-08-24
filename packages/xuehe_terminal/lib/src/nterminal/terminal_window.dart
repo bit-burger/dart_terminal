@@ -4,7 +4,7 @@ part of "terminal.dart";
 class TerminalWindow {
   final input = _TerminalInputImpl();
   final TerminalEscapeCodeWriter bufferedEscapeCodeWriter;
-  final BufferedTerminalWriter bufferedTerminalWriter;
+  final LimitedBufferedTerminalWriter bufferedTerminalWriter;
   final TerminalEscapeCodeWriter directEscapeCodeWriter;
   final DirectTerminalWriter directTerminalWriter;
 
@@ -14,7 +14,7 @@ class TerminalWindow {
 
   TerminalWindow({int maxBufferSize = 1024})
       : this._(
-          BufferedTerminalWriter(maxBufferSize: maxBufferSize),
+          LimitedBufferedTerminalWriter(maxBufferSize: maxBufferSize),
           DirectTerminalWriter(),
         );
 

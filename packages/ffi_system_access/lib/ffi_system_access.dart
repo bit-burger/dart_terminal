@@ -1,4 +1,4 @@
-library;
+library ffi_system_access;
 
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi;

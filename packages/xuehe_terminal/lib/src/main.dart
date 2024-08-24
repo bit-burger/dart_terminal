@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:advanced_terminal/src/canvas/canvas.dart';
 import 'package:advanced_terminal/src/canvas/canvas_drawer.dart';
 import 'package:advanced_terminal/src/performance_terst.dart';
-import 'package:advanced_terminal/src/style/style.dart';
+import 'package:advanced_terminal/src/style/legacy_style.dart';
 
 import 'canvas/picture.dart';
 import 'terminal_writer/terminal_escape_code_writer.dart';
@@ -14,7 +14,6 @@ const s = TerminalStyle(backgroundColor: XTermTerminalColor(color: 50));
 const s2 = TerminalStyle(backgroundColor: XTermTerminalColor(color: 60));
 
 void main() async {
-  final window = TerminalWindow.simple;
   final canvas = ManualRefreshTerminalCanvas(window.columns, window.rows);
   final canvasShapeDrawer = CanvasDrawer(canvas);
   // canvasShapeDrawer.drawRectangle(

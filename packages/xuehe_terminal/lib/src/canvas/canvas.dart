@@ -1,4 +1,4 @@
-import 'package:advanced_terminal/src/style/style.dart';
+import 'package:advanced_terminal/src/style/legacy_style.dart';
 import 'dart:typed_data';
 
 import '../terminal/terminal.dart';

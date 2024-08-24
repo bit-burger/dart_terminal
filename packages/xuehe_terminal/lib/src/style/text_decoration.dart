@@ -66,14 +66,14 @@ class TextDecorationSetBuilder {
 
 /// Represents multiple TextDecorations at one time.
 class TextDecorationSet {
-  final int _bitField;
+  final int bitField;
 
-  TextDecorationSet._raw(this._bitField);
+  TextDecorationSet._raw(this.bitField);
 
   TextDecorationSet._decorationNumber(int decorationNumber)
       : this._raw(1 << decorationNumber);
 
-  const TextDecorationSet.empty() : _bitField = 0;
+  const TextDecorationSet.empty() : bitField = 0;
 
   factory TextDecorationSet(Iterable<TextDecoration> decorations) =>
       (TextDecorationSetBuilder()..addAll(decorations)).build();
@@ -94,46 +94,46 @@ class TextDecorationSet {
   static final crossedOut = TextDecorationSet._decorationNumber(7);
 
   bool contains(TextDecoration decoration) =>
-      decoration.bitFlag & _bitField != 0;
+      decoration.bitFlag & bitField != 0;
 
-  static void transitionSGRCode(
-    TextDecorationSet from,
-    TextDecorationSet to,
-    TerminalEscapeCodeWriter escapeCodeWriter,
-  ) {
-    if (from._bitField != to._bitField) {
-      final changedBitMask = ~(from._bitField & to._bitField);
-      final removedBitField = from._bitField & changedBitMask;
-      _applyBitFieldToSGR(removedBitField, false, escapeCodeWriter);
-      final addedBitField = to._bitField & changedBitMask;
-      _applyBitFieldToSGR(addedBitField, true, escapeCodeWriter);
-    }
-  }
-
-  static void _applyBitFieldToSGR(
-    int bitField,
-    bool addDecorations,
-    TerminalEscapeCodeWriter escapeCodeWriter,
-  ) {
-    if (bitField != 0) {
-      for (var i = 0; i <= TextDecoration.highestBitFlag; i++) {
-        final decorationBitFlag = 1 << i;
-        if (decorationBitFlag & bitField != 0) {
-          final decoration = TextDecoration.values[i];
-          if (addDecorations) {
-            escapeCodeWriter.escParam(decoration.onCode);
-          } else {
-            escapeCodeWriter.escParam(decoration.offCode);
-          }
-        }
-      }
-    }
-  }
+  // static void transitionSGRCode(
+  //   TextDecorationSet from,
+  //   TextDecorationSet to,
+  //   TerminalEscapeCodeWriter escapeCodeWriter,
+  // ) {
+  //   if (from._bitField != to._bitField) {
+  //     final changedBitMask = ~(from._bitField & to._bitField);
+  //     final removedBitField = from._bitField & changedBitMask;
+  //     _applyBitFieldToSGR(removedBitField, false, escapeCodeWriter);
+  //     final addedBitField = to._bitField & changedBitMask;
+  //     _applyBitFieldToSGR(addedBitField, true, escapeCodeWriter);
+  //   }
+  // }
+  //
+  // static void _applyBitFieldToSGR(
+  //   int bitField,
+  //   bool addDecorations,
+  //   TerminalEscapeCodeWriter escapeCodeWriter,
+  // ) {
+  //   if (bitField != 0) {
+  //     for (var i = 0; i <= TextDecoration.highestBitFlag; i++) {
+  //       final decorationBitFlag = 1 << i;
+  //       if (decorationBitFlag & bitField != 0) {
+  //         final decoration = TextDecoration.values[i];
+  //         if (addDecorations) {
+  //           escapeCodeWriter.escParam(decoration.onCode);
+  //         } else {
+  //           escapeCodeWriter.escParam(decoration.offCode);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
   @override
-  int get hashCode => _bitField;
+  int get hashCode => bitField;
 
   @override
   bool operator ==(Object other) =>
-      other is TextDecorationSet && _bitField == other._bitField;
+      other is TextDecorationSet && bitField == other.bitField;
 }

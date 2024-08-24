@@ -1,0 +1,1 @@
+class TerminalNotSupportedException extends Error {}

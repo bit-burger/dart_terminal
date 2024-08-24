@@ -4,11 +4,11 @@ abstract class TerminalWriter {
   void write(String s);
 
   void writeCharCode(int charCode);
+
+  void flush() {}
 }
 
 class DirectTerminalWriter extends TerminalWriter {
-  DirectTerminalWriter();
-
   @override
   void write(String s) => io.stdout.write(s);
 
@@ -16,11 +16,11 @@ class DirectTerminalWriter extends TerminalWriter {
   void writeCharCode(int charCode) => io.stdout.writeCharCode(charCode);
 }
 
-class BufferedTerminalWriter extends TerminalWriter {
+class LimitedBufferedTerminalWriter extends TerminalWriter {
   final int maxBufferSize;
   final _buffer = StringBuffer();
 
-  BufferedTerminalWriter({required this.maxBufferSize});
+  LimitedBufferedTerminalWriter({required this.maxBufferSize});
 
   @override
   void write(String s) {
@@ -38,6 +38,23 @@ class BufferedTerminalWriter extends TerminalWriter {
     _buffer.writeCharCode(charCode);
   }
 
+  @override
+  void flush() {
+    io.stdout.write(_buffer);
+    _buffer.clear();
+  }
+}
+
+class BufferedTerminalWriter extends TerminalWriter {
+  final _buffer = StringBuffer();
+
+  @override
+  void write(String s) => _buffer.write(s);
+
+  @override
+  void writeCharCode(int charCode) => _buffer.writeCharCode(charCode);
+
+  @override
   void flush() {
     io.stdout.write(_buffer);
     _buffer.clear();

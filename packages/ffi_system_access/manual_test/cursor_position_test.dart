@@ -15,13 +15,19 @@ void main() async {
   final access = SystemAccess(baseLibraryPath: "..");
   stdin.echoMode = false;
   stdin.lineMode = false;
-  stdout.write(ESC + "6n");
+  stdout.write(ESC + "6n"); // tells the terminal to report mouse position
+  // stdout.write("\u001B[?1003h\u001B[?1015h\u001B[?1006h");
+  stdout.write("\u001B[?1003;1015;1006h"); // enable mouse events
   final stdinCharacters = stdin/*.transform(utf8.decoder)*/;
   var i = 0;
-  await for (final character in stdinCharacters) {
-    print(character);
-    if (++i == 10) {
-      return;
+  await for (var charList in stdinCharacters) {
+    charList = [...charList];
+    print(charList);
+    print(String.fromCharCodes(charList..removeAt(0)));
+    if (++i == 100) {
+      break;
     }
   }
+  stdout.write("\u001B[?1003;1015;1006l"); // disable mouse events
+  stdout.write(ansiEscapes.cursorShow);
 }

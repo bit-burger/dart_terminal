@@ -3,8 +3,10 @@ part of "style.dart";
 /// based on https://notes.burke.libbey.me/ansi-escape-codes/ and
 /// https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
 abstract class TerminalColor {
-  final String _termRepBackground;
-  final String _termRepForeground;
+  /// representation in RGB, default terminal color is -1
+  final int rgbRep;
+  final String termRepBackground;
+  final String termRepForeground;
 
   /// To uniquely identify a color.
   ///
@@ -21,16 +23,16 @@ abstract class TerminalColor {
 
   const TerminalColor({
     required int comparisonCode,
-    required String termRepForeground,
-    required String termRepBackground,
+    required this.rgbRep,
+    required this.termRepForeground,
+    required this.termRepBackground,
   })  : _comparisonCode = comparisonCode,
-        _termRepForeground = termRepForeground,
-        _termRepBackground = termRepBackground,
         assert(comparisonCode < 0 || comparisonCode > 20000000);
 
   const TerminalColor._(
-    this._termRepForeground,
-    this._termRepBackground,
+    this.rgbRep,
+    this.termRepForeground,
+    this.termRepBackground,
     this._comparisonCode,
   );
 
@@ -44,7 +46,7 @@ abstract class TerminalColor {
 
 /// Default terminal color.
 class DefaultTerminalColor extends TerminalColor {
-  const DefaultTerminalColor() : super._("39", "49", 0);
+  const DefaultTerminalColor() : super._(-1, "39", "49", 0);
 }
 
 abstract class _BaseIntTerminalColor extends TerminalColor {
@@ -52,8 +54,9 @@ abstract class _BaseIntTerminalColor extends TerminalColor {
 
   const _BaseIntTerminalColor(
       String termRepForeground, String termRepBackground,
-      {required this.color, required int comparisonCodeStart})
+      {required this.color, required int rgb, required int comparisonCodeStart})
       : super._(
+          rgb,
           termRepBackground,
           termRepBackground,
           color + comparisonCodeStart,
@@ -63,24 +66,24 @@ abstract class _BaseIntTerminalColor extends TerminalColor {
 /// The 8 basic colors.
 class BasicTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 7;
-  const BasicTerminalColor({required super.color})
+  const BasicTerminalColor({required super.color, required super.rgb})
       : assert(color >= 0 && color < 8),
         super("${30 + color}", "${40 + color}", comparisonCodeStart: 1);
 
-  static const black = BasicTerminalColor(color: 0);
-  static const red = BasicTerminalColor(color: 1);
-  static const green = BasicTerminalColor(color: 2);
-  static const yellow = BasicTerminalColor(color: 3);
-  static const blue = BasicTerminalColor(color: 4);
-  static const magenta = BasicTerminalColor(color: 5);
-  static const cyan = BasicTerminalColor(color: 6);
-  static const white = BasicTerminalColor(color: 7);
+  static const black = BasicTerminalColor(color: 0, rgb: 0);
+  static const red = BasicTerminalColor(color: 1, rgb: 0x00FF0000);
+  static const green = BasicTerminalColor(color: 2, rgb: 0x0000FF00);
+  static const yellow = BasicTerminalColor(color: 3, rgb: 0x00FFFF00);
+  static const blue = BasicTerminalColor(color: 4, rgb: 0x000000FF);
+  static const magenta = BasicTerminalColor(color: 5, rgb: 0x00FF00FF);
+  static const cyan = BasicTerminalColor(color: 6, rgb: 0x0000FFFF);
+  static const white = BasicTerminalColor(color: 7, rgb: 0x00FFFFFFFF);
 }
 
 /// The 8 bright colors.
 class BrightTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 7;
-  const BrightTerminalColor({required super.color})
+  const BrightTerminalColor({required super.color, required super.rgb})
       : assert(color >= 0 && color < 8),
         super("${90 + color}", "${100 + color}", comparisonCodeStart: 10);
 
@@ -92,21 +95,21 @@ class BrightTerminalColor extends _BaseIntTerminalColor {
     }
   }
 
-  static const black = BrightTerminalColor(color: 0);
-  static const red = BrightTerminalColor(color: 1);
-  static const green = BrightTerminalColor(color: 2);
-  static const yellow = BrightTerminalColor(color: 3);
-  static const blue = BrightTerminalColor(color: 4);
-  static const magenta = BrightTerminalColor(color: 5);
-  static const cyan = BrightTerminalColor(color: 6);
-  static const white = BrightTerminalColor(color: 7);
+  static const black = BasicTerminalColor(color: 0, rgb: 0x00050505);
+  static const red = BasicTerminalColor(color: 1, rgb: 0x00FF0505);
+  static const green = BasicTerminalColor(color: 2, rgb: 0x0005FF05);
+  static const yellow = BasicTerminalColor(color: 3, rgb: 0x00FFFF05);
+  static const blue = BasicTerminalColor(color: 4, rgb: 0x000505FF);
+  static const magenta = BasicTerminalColor(color: 5, rgb: 0x00FF05FF);
+  static const cyan = BasicTerminalColor(color: 6, rgb: 0x0005FFFF);
+  static const white = BasicTerminalColor(color: 7, rgb: 0x00FFFFFFFF);
 }
 
 /// The 256 colors supported by xterm.
 /// For all 256 see: {@image <image alt='' src='/docs/xterm_256_colors.png'>}
 class XTermTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 255;
-  const XTermTerminalColor({required super.color})
+  const XTermTerminalColor({required super.color, super.rgb = 0x00FFFFFF})
       : assert(color >= 0 && color < 256),
         super(
           "38;5;$color",
@@ -137,6 +140,7 @@ class RGBTerminalColor extends _BaseIntTerminalColor {
         super(
           "38;2;$red;$green;$blue",
           "48;2;$red;$green;$blue",
+          rgb: red*256*256 + green * 256 + green,
           color: color,
           comparisonCodeStart: 1000,
         );
