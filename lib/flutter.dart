@@ -6,47 +6,60 @@ import 'package:dart_tui/ansi/ansi_terminal_window.dart';
 import 'ansi/ansi_terminal_controller.dart';
 import 'core/terminal.dart';
 
-
 class ControlTerminalInputListener extends TerminalInputListener {
   @override
   void controlCharacter(ControlCharacter controlCharacter) async {
     stdout.write("$controlCharacter;");
     if (controlCharacter == ControlCharacter.ctrlZ) {
       await window.destroy();
+      stdout.write("\u001B[?1003l"); // enable mouse events
+      stdout.write("\u001B[?1006l");
       exit(0);
     }
   }
 
   @override
   void input(String s) {
-    stdout.write("input: '$s'");
+    stdout.write("input('$s')");
   }
 
   @override
   void screenResize(Size size) {
-    stdout.write("resize to ${size.width} ${size.height};");
+    stdout.write("resize(width:${size.width},height:${size.height});");
   }
 
   @override
   void signal(AllowedSignal signal) {
-    stdout.write("signal: $signal;");
+    stdout.write("signal($signal);");
   }
 
   @override
   void focusChange(bool isFocused) {
-    stdout.write("focuschange: $isFocused;");
+    stdout.write("focuschange($isFocused);");
   }
 
   @override
-  void mouseEvent(MouseButton button, MouseEventType type, Position position) {
-    stdout.write("mouseEvent: $button, $type, $position;");
+  void mouseEvent(MouseEvent event) {
+    switch (event) {
+      case MouseButtonPressEvent(pressType: var t, button: var b):
+        stdout.write("press($t,$b)");
+      case MouseScrollEvent(xScroll: var x, yScroll: var y):
+        stdout.write("scroll(x:$x,y:$y);");
+      case MouseHoverMotionEvent(position: var pos):
+        stdout.write("motion(x:${pos.x},y:${pos.y})");
+    }
   }
 }
 
-final window = AnsiTerminalWindow(terminalController: AnsiTerminalController(useTermLib: true));
+final window = AnsiTerminalWindow(
+    terminalController: AnsiTerminalController(useTermLib: true));
 
 void main() async {
-  window..addListener(ControlTerminalInputListener())..attach();
+  stdout.write("\u001B[?1003h"); // enable mouse events
+  stdout.write("\u001B[?1006h");
+  window
+    ..addListener(ControlTerminalInputListener())
+    ..attach();
   stdout.write("start;");
   await Future.delayed(Duration(seconds: 3));
 }

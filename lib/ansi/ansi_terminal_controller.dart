@@ -16,6 +16,8 @@ abstract class TerminalController {
   void saveCursorPosition();
   void restoreCursorPosition();
   void setInputMode(bool raw);
+  void changeMouseTrackingMode({required bool enable});
+  void changeFocusTrackingMode({required bool enable});
 }
 
 class AnsiTerminalController extends TerminalController {
@@ -84,6 +86,24 @@ class AnsiTerminalController extends TerminalController {
     } else {
       stdin.echoMode = !raw;
       stdin.lineMode = !raw;
+    }
+  }
+
+  @override
+  void changeFocusTrackingMode({required bool enable}) {
+    if(enable) {
+      stdout.write(ansi_codes.enableFocusTracking);
+    } else {
+      stdout.write(ansi_codes.disableFocusTracking);
+    }
+  }
+
+  @override
+  void changeMouseTrackingMode({required bool enable}) {
+    if(enable) {
+      stdout.write(ansi_codes.enableFocusTracking);
+    } else {
+      stdout.write(ansi_codes.disableFocusTracking);
     }
   }
 }

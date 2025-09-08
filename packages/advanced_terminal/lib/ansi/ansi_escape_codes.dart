@@ -101,6 +101,14 @@ const String disableAlternativeBuffer = '\x1B[?1049l';
 const String saveScreen = '\x1B[?47h';
 const String restoreScreen = '\x1B[?47l';
 
+/// Focus tracking
+const String enableFocusTracking = "\u001B[?1007h";
+const String disableFocusTracking = "\u001B[?1007l";
+
+/// Mouse functionality (xterm): https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+const String disableMouseEvents = "\u001B[?1003;1015;1006h";
+const String enableMouseEvents = "\u001B[?1003;1015;1006l";
+
 // TODO: scrolling + delete scrollback buffers
 
 /// Keyboard Strings

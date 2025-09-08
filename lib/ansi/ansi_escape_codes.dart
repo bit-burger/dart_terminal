@@ -103,6 +103,15 @@ const String restoreScreen = '\x1B[?47l';
 
 // TODO: scrolling + delete scrollback buffers
 
+/// Done based on xterm functionality: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+/// Focus tracking
+const String enableFocusTracking = "\u001B[?1004h";
+const String disableFocusTracking = "\u001B[?1004l";
+
+/// Mouse functionality
+const String enableMouseEvents = "\u001B[?1003;1006h";
+const String disableMouseEvents = "\u001B[?1003;1006l";
+
 /// Keyboard Strings
 String keyboardString(String code) => '\x1B[${code}~';
 

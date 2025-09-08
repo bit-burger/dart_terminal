@@ -65,9 +65,36 @@ enum ControlCharacter {
   F4,
 }
 
-enum MouseButton { left, right, middle }
+sealed class MouseEvent {
+  final bool shiftKeyPressed, metaKeyPressed, ctrlKeyPressed;
+  final Position position;
 
-enum MouseEventType { press, release }
+  const MouseEvent(this.shiftKeyPressed, this.metaKeyPressed,
+      this.ctrlKeyPressed, this.position);
+}
+
+final class MouseButtonPressEvent extends MouseEvent {
+  final MouseButton button;
+  final MouseButtonPressEventType pressType;
+  const MouseButtonPressEvent(super.shiftKeyPressed, super.metaKeyPressed,
+      super.ctrlKeyPressed, super.position, this.button, this.pressType);
+}
+
+final class MouseHoverMotionEvent extends MouseEvent {
+  const MouseHoverMotionEvent(super.shiftKeyPressed, super.metaKeyPressed,
+      super.ctrlKeyPressed, super.position);
+}
+
+final class MouseScrollEvent extends MouseEvent {
+  final int xScroll, yScroll;
+  const MouseScrollEvent(super.shiftKeyPressed, super.metaKeyPressed,
+      super.ctrlKeyPressed, super.position, this.xScroll, this.yScroll);
+}
+
+/// Note: button 4-7 are used for scrolling
+enum MouseButton { left, right, middle, button8, button9, button10, button11 }
+
+enum MouseButtonPressEventType { press, release }
 
 abstract class TerminalInputListener {
   void screenResize(Size size);
@@ -78,7 +105,7 @@ abstract class TerminalInputListener {
 
   void signal(AllowedSignal signal);
 
-  void mouseEvent(MouseButton button, MouseEventType type, Position position);
+  void mouseEvent(MouseEvent event);
 
   void focusChange(bool isFocused);
 }
@@ -100,7 +127,7 @@ class DefaultTerminalInputListener extends TerminalInputListener {
   void focusChange(bool isFocused) {}
 
   @override
-  void mouseEvent(MouseButton button, MouseEventType type, Position position) {}
+  void mouseEvent(MouseEvent event) {}
 }
 
 class TerminalNotSupportedException extends Error {}
