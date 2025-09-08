@@ -3,7 +3,7 @@ part of "style.dart";
 /// based on https://notes.burke.libbey.me/ansi-escape-codes/ and
 /// https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
 abstract class TerminalColor {
-  /// representation in RGB, default terminal color is -1
+  /// representation in RGB, default core color is -1
   final int rgbRep;
   final String termRepBackground;
   final String termRepForeground;
@@ -44,7 +44,7 @@ abstract class TerminalColor {
   int get hashCode => _comparisonCode;
 }
 
-/// Default terminal color.
+/// Default core color.
 class DefaultTerminalColor extends TerminalColor {
   const DefaultTerminalColor() : super._(-1, "39", "49", 0);
 }
@@ -118,7 +118,7 @@ class XTermTerminalColor extends _BaseIntTerminalColor {
         );
 }
 
-/// 256^3 colors, not supported by every terminal.
+/// 256^3 colors, not supported by every core.
 class RGBTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 256^3 - 1;
   const RGBTerminalColor.raw({required int color})

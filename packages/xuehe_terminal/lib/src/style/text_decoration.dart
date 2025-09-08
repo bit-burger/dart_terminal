@@ -27,7 +27,7 @@ enum TextDecoration {
   /// not supported in Terminal.app
   crossedOut(9, 29, 7);
 
-  /// SGR code for turning decoration on and off in the terminal.
+  /// SGR code for turning decoration on and off in the core.
   final String onCode, offCode;
   final int bitFlag;
 

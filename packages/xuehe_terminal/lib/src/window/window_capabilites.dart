@@ -50,9 +50,9 @@ abstract class TerminalWindowCapabilities {
     throw TerminalCapabilityNotSupportedError("clear screen");
   }
 
-  /// clears the whole terminal buffer
+  /// clears the whole core buffer
   void clearTerminal() {
-    throw TerminalCapabilityNotSupportedError("clear terminal");
+    throw TerminalCapabilityNotSupportedError("clear core");
   }
 
   void transitionSGR({

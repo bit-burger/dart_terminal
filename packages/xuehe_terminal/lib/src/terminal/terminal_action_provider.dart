@@ -11,7 +11,7 @@ abstract class TerminalAction {
   }
 
   static void notSupported(TerminalAction action, TerminalActionSupplier supplier) {
-    throw Exception('Supplier "$supplier" does not support terminal action "$action"');
+    throw Exception('Supplier "$supplier" does not support core action "$action"');
   }
 }
 

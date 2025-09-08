@@ -9,6 +9,9 @@ environment:
 # Add regular dependencies here.
 dependencies:
   ansi_escapes: ^1.1.0
+  dart_console: ^4.1.2
+  flutter:
+    sdk: flutter
 
 dev_dependencies:
   lints: ^2.0.0

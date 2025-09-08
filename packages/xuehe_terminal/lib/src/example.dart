@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:advanced_terminal/src/canvas/canvas_drawer.dart';
 import 'package:advanced_terminal/src/style/legacy_style.dart';
-import 'package:advanced_terminal/src/terminal/codes.dart';
+import 'package:advanced_terminal/src/core/codes.dart';
 
 import 'terminal/terminal.dart';
 import 'canvas/canvas.dart';

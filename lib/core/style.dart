@@ -28,11 +28,11 @@ abstract class TerminalColor {
         assert(comparisonCode < 0 || comparisonCode > 20000000);
 
   const TerminalColor._(
-    this.rgbRep,
-    this.termRepForeground,
-    this.termRepBackground,
-    this.comparisonCode,
-  );
+      this.rgbRep,
+      this.termRepForeground,
+      this.termRepBackground,
+      this.comparisonCode,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -90,7 +90,7 @@ class TextDecorationSet {
 
   TextDecorationSet.from(Iterable<TextDecoration> textDecorations)
       : bitField = textDecorations.fold(
-            0, (previousValue, element) => previousValue & element.bitFlag);
+      0, (previousValue, element) => previousValue & element.bitFlag);
 
   TextDecorationSet.union(TextDecorationSet a, TextDecorationSet b)
       : bitField = a.bitField & b.bitField;
@@ -108,13 +108,13 @@ class TextDecorationSet {
     bool fastBlink = false,
     bool crossedOut = false,
   }) : bitField = ((intense ? 1 : 0) << 0) +
-            ((faint ? 1 : 0) << 1) +
-            ((italic ? 1 : 0) << 2) +
-            ((underline ? 1 : 0) << 3) +
-            ((doubleUnderline ? 1 : 0) << 4) +
-            ((slowBlink ? 1 : 0) << 5) +
-            ((fastBlink ? 1 : 0) << 6) +
-            ((crossedOut ? 1 : 0) << 7);
+      ((faint ? 1 : 0) << 1) +
+      ((italic ? 1 : 0) << 2) +
+      ((underline ? 1 : 0) << 3) +
+      ((doubleUnderline ? 1 : 0) << 4) +
+      ((slowBlink ? 1 : 0) << 5) +
+      ((fastBlink ? 1 : 0) << 6) +
+      ((crossedOut ? 1 : 0) << 7);
 
   const TextDecorationSet._decorationNumber(int decorationNumber)
       : bitField = 1 << decorationNumber;
@@ -143,29 +143,29 @@ class TextDecorationSet {
       other is TextDecorationSet && bitField == other.bitField;
 }
 
-class TerminalForegroundStyle {
-  final TextDecorationSet textDecorations;
-  final TerminalColor color;
-
-  const TerminalForegroundStyle({
-    required this.textDecorations,
-    required this.color,
-  });
-
-  static const defaultStyle = TerminalForegroundStyle(
-    textDecorations: TextDecorationSet.empty(),
-    color: DefaultTerminalColor(),
-  );
-
-  @override
-  bool operator ==(Object other) =>
-      other is TerminalForegroundStyle &&
-      color.comparisonCode == other.color.comparisonCode &&
-      textDecorations.bitField == other.textDecorations.bitField;
-
-  @override
-  int get hashCode => color.comparisonCode << 8 + textDecorations.bitField;
-}
+// class TerminalForegroundStyle {
+//   final TextDecorationSet textDecorations;
+//   final TerminalColor color;
+//
+//   const TerminalForegroundStyle({
+//    required this.textDecorations,
+//    required this.color,
+//  });
+//
+//  static const defaultStyle = TerminalForegroundStyle(
+//    textDecorations: TextDecorationSet.empty(),
+//    color: DefaultTerminalColor(),
+//  );
+//
+//  @override
+//  bool operator ==(Object other) =>
+//      other is TerminalForegroundStyle &&
+//          color.comparisonCode == other.color.comparisonCode &&
+//          textDecorations.bitField == other.textDecorations.bitField;
+//
+//  @override
+//  int get hashCode => color.comparisonCode << 8 + textDecorations.bitField;
+// }
 
 /// Default core color.
 class DefaultTerminalColor extends TerminalColor {
@@ -179,11 +179,11 @@ abstract class _BaseIntTerminalColor extends TerminalColor {
       String termRepForeground, String termRepBackground,
       {required this.color, required int rgb, required int comparisonCodeStart})
       : super._(
-          rgb,
-          termRepBackground,
-          termRepBackground,
-          color + comparisonCodeStart,
-        );
+    rgb,
+    termRepBackground,
+    termRepBackground,
+    color + comparisonCodeStart,
+  );
 }
 
 /// The 8 basic colors.
@@ -235,10 +235,10 @@ class XTermTerminalColor extends _BaseIntTerminalColor {
   const XTermTerminalColor({required super.color, super.rgb = 0x00FFFFFF})
       : assert(color >= 0 && color < 256),
         super(
-          "38;5;$color",
-          "48;5;$color",
-          comparisonCodeStart: 20,
-        );
+        "38;5;$color",
+        "48;5;$color",
+        comparisonCodeStart: 20,
+      );
 }
 
 /// 256^3 colors, not supported by every core.
@@ -246,11 +246,11 @@ class RGBTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 256^3 - 1;
   const RGBTerminalColor.raw({required int color})
       : this._(
-          color ~/ 256 ~/ 256,
-          (color % (256 * 256)) ~/ 256,
-          color % 256,
-          color,
-        );
+    color ~/ 256 ~/ 256,
+    (color % (256 * 256)) ~/ 256,
+    color % 256,
+    color,
+  );
 
   /// The colors separated, each can be assigned 0 to 255.
   const RGBTerminalColor({int red = 0, int green = 0, int blue = 0})
@@ -261,10 +261,10 @@ class RGBTerminalColor extends _BaseIntTerminalColor {
         assert(green >= 0 && green < 256),
         assert(blue >= 0 && blue < 256),
         super(
-          "38;2;$red;$green;$blue",
-          "48;2;$red;$green;$blue",
-          rgb: red * 256 * 256 + green * 256 + green,
-          color: color,
-          comparisonCodeStart: 1000,
-        );
+        "38;2;$red;$green;$blue",
+        "48;2;$red;$green;$blue",
+        rgb: red * 256 * 256 + green * 256 + green,
+        color: color,
+        comparisonCodeStart: 1000,
+      );
 }

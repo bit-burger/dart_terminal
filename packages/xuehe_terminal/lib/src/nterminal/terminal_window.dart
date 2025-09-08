@@ -1,6 +1,6 @@
 part of "terminal.dart";
 
-/// USE TPUT RMCUP an TPUT SMCUP to restore terminal after use
+/// USE TPUT RMCUP an TPUT SMCUP to restore core after use
 class TerminalWindow {
   final input = _TerminalInputImpl();
   final TerminalEscapeCodeWriter bufferedEscapeCodeWriter;

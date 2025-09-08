@@ -15,7 +15,7 @@ void main() async {
   final access = SystemAccess(baseLibraryPath: "..");
   stdin.echoMode = false;
   stdin.lineMode = false;
-  stdout.write(ESC + "6n"); // tells the terminal to report mouse position
+  stdout.write(ESC + "6n"); // tells the core to report mouse position
   // stdout.write("\u001B[?1003h\u001B[?1015h\u001B[?1006h");
   stdout.write("\u001B[?1003;1015;1006h"); // enable mouse events
   final stdinCharacters = stdin/*.transform(utf8.decoder)*/;

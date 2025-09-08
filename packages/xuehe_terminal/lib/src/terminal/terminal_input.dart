@@ -8,7 +8,6 @@ abstract class TerminalInput {
 
 }
 
-class _TerminalInputImpl extends TerminalInput {
   _TerminalInputImpl() {
     io.stdin.echoMode = false;
     io.stdin.lineMode = false;
