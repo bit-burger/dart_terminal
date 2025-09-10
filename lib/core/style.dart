@@ -132,6 +132,7 @@ class TextDecorationSet {
   static const fastBlink = TextDecorationSet._decorationNumber(6);
   static const crossedOut = TextDecorationSet._decorationNumber(7);
 
+
   bool contains(TextDecoration decoration) =>
       decoration.bitFlag & bitField != 0;
 

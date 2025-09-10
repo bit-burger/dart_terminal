@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_console/src/ffi/termlib.dart';
+import 'package:dart_tui/ansi/ansi_escape_codes.dart';
 import 'package:dart_tui/ansi/ansi_terminal_window.dart';
 
 import 'ansi/ansi_terminal_controller.dart';
@@ -51,12 +52,9 @@ class ControlTerminalInputListener extends TerminalInputListener {
   }
 }
 
-final window = AnsiTerminalWindow(
-    terminalController: AnsiTerminalController(useTermLib: true));
+final window = AnsiTerminalWindowFactory.agnostic(controller: AnsiTerminalController(useTermLib: true));
 
-void main() async {
-  stdout.write("\u001B[?1003h"); // enable mouse events
-  stdout.write("\u001B[?1006h");
+void amain() async {
   window
     ..addListener(ControlTerminalInputListener())
     ..attach();
@@ -64,15 +62,20 @@ void main() async {
   await Future.delayed(Duration(seconds: 3));
 }
 
-void amain() async {
+void main() async {
+  print(Platform.environment["miaowmiaowmiaoasdfasd"]);
   final lib = TermLib();
   stdout.write("as");
   lib.enableRawMode();
+  AnsiTerminalController().changeScreenMode(alternateBuffer: true);
+  stdout.write(cursorTo(1, 50));
+  stdout.write("a");
 
   await Future.delayed(Duration(seconds: 3));
 
+
+  await Future.delayed(Duration(seconds: 3));
   lib.disableRawMode();
   stdout.write("as");
-
-  await Future.delayed(Duration(seconds: 3));
+  AnsiTerminalController().changeScreenMode(alternateBuffer: false);
 }

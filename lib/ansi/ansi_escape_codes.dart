@@ -92,8 +92,8 @@ String bgRGBColor(int r, int g, int b) => '\x1B[48;2;$r;$g;${b}m';
 /// Screen Modes
 String setScreenMode(int mode) => '\x1B[=${mode}h';
 String resetScreenMode(int mode) => '\x1B[=${mode}l';
-const String enableLineWrapping = '\x1B[=7h';
-const String disableLineWrapping = '\x1B[=7l';
+const String enableLineWrapping = '\x1B[?7h';
+const String disableLineWrapping = '\x1B[?7l';
 
 /// Common Private Modes
 const String enableAlternativeBuffer = '\x1B[?1049h';
@@ -145,8 +145,12 @@ final Map<String, String> keyboardCodes = {
   'TAB': '9',
 };
 
-String keyCode(String key,
-    {bool shift = false, bool ctrl = false, bool alt = false}) {
+String keyCode(
+  String key, {
+  bool shift = false,
+  bool ctrl = false,
+  bool alt = false,
+}) {
   if (!keyboardCodes.containsKey(key)) return '';
   String baseCode = keyboardCodes[key]!;
   if (shift) baseCode = '0;${int.parse(baseCode.split(';')[1]) + 25}';

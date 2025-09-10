@@ -18,13 +18,14 @@ abstract class TerminalController {
   void setInputMode(bool raw);
   void changeMouseTrackingMode({required bool enable});
   void changeFocusTrackingMode({required bool enable});
+  void changeLineWrappingMode({required bool enable});
 }
 
 class AnsiTerminalController extends TerminalController {
   // TODO: might disable controlc etc.
   final bool useTermLib;
 
-  const AnsiTerminalController({this.useTermLib = false});
+  const AnsiTerminalController({this.useTermLib = true});
 
   @override
   void setCursorPosition(int x, int y) {
@@ -104,6 +105,15 @@ class AnsiTerminalController extends TerminalController {
       stdout.write(ansi_codes.enableFocusTracking);
     } else {
       stdout.write(ansi_codes.disableFocusTracking);
+    }
+  }
+
+  @override
+  void changeLineWrappingMode({required bool enable}) {
+    if(enable) {
+      stdout.write(ansi_codes.enableLineWrapping);
+    } else {
+      stdout.write(ansi_codes.disableLineWrapping);
     }
   }
 }
