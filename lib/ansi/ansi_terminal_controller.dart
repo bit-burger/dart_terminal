@@ -6,6 +6,7 @@ import 'ansi_escape_codes.dart' as ansi_codes;
 abstract class TerminalController {
   const TerminalController();
 
+  void clearScreen();
   void changeCursorVisibility({required bool hiding});
   void changeSize(int width, int height);
   void changeTerminalTitle(String title);
@@ -92,7 +93,7 @@ class AnsiTerminalController extends TerminalController {
 
   @override
   void changeFocusTrackingMode({required bool enable}) {
-    if(enable) {
+    if (enable) {
       stdout.write(ansi_codes.enableFocusTracking);
     } else {
       stdout.write(ansi_codes.disableFocusTracking);
@@ -101,7 +102,7 @@ class AnsiTerminalController extends TerminalController {
 
   @override
   void changeMouseTrackingMode({required bool enable}) {
-    if(enable) {
+    if (enable) {
       stdout.write(ansi_codes.enableMouseEvents);
     } else {
       stdout.write(ansi_codes.disableMouseEvents);
@@ -110,10 +111,13 @@ class AnsiTerminalController extends TerminalController {
 
   @override
   void changeLineWrappingMode({required bool enable}) {
-    if(enable) {
+    if (enable) {
       stdout.write(ansi_codes.enableLineWrapping);
     } else {
       stdout.write(ansi_codes.disableLineWrapping);
     }
   }
+
+  @override
+  void clearScreen() => stdout.write(ansi_codes.eraseEntireScreen);
 }

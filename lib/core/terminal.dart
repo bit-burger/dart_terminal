@@ -186,14 +186,35 @@ enum TerminalCapability {
 
 abstract class TerminalWindow implements TerminalCanvas {
   List<TerminalInputListener> listeners = [];
+  bool _isAttached = true;
+  bool _isDestroyed = false;
 
   Position get cursorPosition;
 
   // also handle sigint etc...
   // raw scroll mode and stuff like that
-  Future<void> attach();
+  Future<void> attach() async {
+    if (_isDestroyed) {
+      throw StateError(
+        "TerminalWindow is already destroyed, cannot attach again.",
+      );
+    }
+    _isAttached = true;
+  }
 
-  Future<void> destroy();
+  Future<void> destroy() async {
+    if (_isDestroyed) {
+      throw StateError(
+        "TerminalWindow is already destroyed, cannot destroy again.",
+      );
+    }
+    if(!_isAttached) {
+      throw StateError(
+        "TerminalWindow has not been attached, cannot destroy.",
+      );
+    }
+    _isDestroyed = true;
+  }
 
   void addListener(TerminalInputListener listener) {
     listeners.add(listener);
@@ -290,14 +311,14 @@ abstract class TerminalCanvas {
 
   void drawString({
     required String text,
-    required TerminalForeground? foreground,
+    required TerminalForegroundStyle? foreground,
     required Position position,
   });
 
   void drawRect({
     required Rect rect,
     TerminalColor? background,
-    TerminalForegroundStyle? foreground,
+    TerminalForeground? foreground,
   });
 
   void drawPoint({

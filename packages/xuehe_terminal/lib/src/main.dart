@@ -9,9 +9,9 @@ import 'package:advanced_terminal/src/style/legacy_style.dart';
 import 'canvas/picture.dart';
 import 'terminal_writer/terminal_escape_code_writer.dart';
 
-const s = TerminalStyle(backgroundColor: XTermTerminalColor(color: 50));
+const s = TerminalStyle(currentBg: XTermTerminalColor(color: 50));
 
-const s2 = TerminalStyle(backgroundColor: XTermTerminalColor(color: 60));
+const s2 = TerminalStyle(currentBg: XTermTerminalColor(color: 60));
 
 void main() async {
   final canvas = ManualRefreshTerminalCanvas(window.columns, window.rows);

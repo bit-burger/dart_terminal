@@ -14,10 +14,10 @@ void main() async {
   drawer.drawBackground(
     32,
     TerminalStyle(
-      backgroundColor: XTermTerminalColor(color: 52),
+      currentBg: XTermTerminalColor(color: 52),
     ),
   );
-  drawer.drawRectangle(Point(1, 0), Point(10, 10), 32, TerminalStyle(backgroundColor: XTermTerminalColor(color: 32)));
+  drawer.drawRectangle(Point(1, 0), Point(10, 10), 32, TerminalStyle(currentBg: XTermTerminalColor(color: 32)));
   canvas.writeToTerminal(window);
   await Future.delayed(Duration(milliseconds: 1000));
   window.directEscapeCodeWriter.moveCursor(1, 1);

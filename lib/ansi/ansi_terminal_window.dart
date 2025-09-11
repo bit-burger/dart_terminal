@@ -101,6 +101,7 @@ class AnsiTerminalWindow extends TerminalWindow
 
   @override
   Future<void> attach() async {
+    await super.attach();
     controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
@@ -127,10 +128,10 @@ class AnsiTerminalWindow extends TerminalWindow
 
   @override
   Future<void> destroy() async {
+    await super.destroy();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
-    _subscriptions.clear();
     sizeTracker.stopTracking();
     sizeTracker.removeListener(this);
     controller
@@ -141,7 +142,6 @@ class AnsiTerminalWindow extends TerminalWindow
       ..changeMouseTrackingMode(enable: false)
       ..changeLineWrappingMode(enable: true);
     _cursorPositionCompleter?.complete(Position(0, 0));
-    _cursorPositionCompleter = null;
   }
 
   bool _tryToInterpretControlCharacter(List<int> input) {
@@ -236,6 +236,7 @@ class AnsiTerminalWindow extends TerminalWindow
       );
       if (x == null || y == null) return true;
       _cursorPositionCompleter?.complete(Position(x - 1, y - 1));
+      _cursorPositionCompleter = null;
       return true;
     }
     // other control characters
@@ -258,6 +259,10 @@ class AnsiTerminalWindow extends TerminalWindow
 
   @override
   void resizeEvent() {
+    screen.reset();
+    screen.resize(size);
+    screen.optimizeForFullDraw();
+    controller.clearScreen();
     for (final listener in listeners) {
       listener.screenResize(size);
     }
@@ -310,23 +315,30 @@ class AnsiTerminalWindow extends TerminalWindow
     required Position position,
     TerminalColor? background,
     TerminalForeground? foreground,
-  }) {}
+  }) => screen.drawPoint(
+    position: position,
+    backgroundColor: background,
+    foreground: foreground,
+  );
 
   @override
   void drawRect({
     required Rect rect,
     TerminalColor? background,
-    TerminalForegroundStyle? foreground,
-  }) {}
+    TerminalForeground? foreground,
+  }) => screen.drawRect(
+    rect: rect,
+    backgroundColor: background,
+    foreground: foreground,
+  );
 
   @override
   void drawString({
     required String text,
-    required TerminalForeground? foreground,
+    required TerminalForegroundStyle? foreground,
     required Position position,
-  }) {
-    // TODO: implement drawString
-  }
+  }) =>
+      screen.drawString(text: text, style: foreground, position: position);
 
   @override
   void changeCursorPosition(Position position) {
@@ -335,7 +347,7 @@ class AnsiTerminalWindow extends TerminalWindow
   }
 
   @override
-  void writeToScreen() {}
+  void writeToScreen() => screen.drawChanges(cursorPosition);
 
   @override
   bool supportsCapability(TerminalCapability capability) =>

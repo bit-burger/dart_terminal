@@ -21,11 +21,11 @@ void main() async {
     RenderApp(
       height: 11,
       graphics: ColoredBox(
-        backgroundColor: BrightTerminalColor.red,
+        currentBg: BrightTerminalColor.red,
         child: Padding(
           padding: EdgeInsets.only(left: 10, top: 4),
           child: ColoredBox(
-            backgroundColor: BrightTerminalColor.green,
+            currentBg: BrightTerminalColor.green,
             child: Text("ashdf\nasdf\nasdf", alignment: Alignment.bottomRight),
           ),
         ),

@@ -19,7 +19,7 @@ const String OSC = '\x1B]';
 /// Cursor Position
 const String cursorPositionQuery = '\x1B[6n';
 const String cursorHome = '\x1B[H';
-String cursorTo(int line, int column) => '\x1B[${line};${column}H';
+String cursorTo(int line, int column) => '\x1B[$line;${column}H';
 String cursorUp(int lines) => '\x1B[${lines}A';
 String cursorDown(int lines) => '\x1B[${lines}B';
 String cursorForward(int columns) => '\x1B[${columns}C';
