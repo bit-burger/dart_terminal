@@ -101,7 +101,6 @@ class AnsiTerminalWindow extends TerminalWindow
 
   @override
   Future<void> attach() async {
-    _capabilities = await capabilitiesDetector.detect();
     controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)

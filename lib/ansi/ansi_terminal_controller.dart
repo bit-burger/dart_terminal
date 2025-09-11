@@ -102,9 +102,9 @@ class AnsiTerminalController extends TerminalController {
   @override
   void changeMouseTrackingMode({required bool enable}) {
     if(enable) {
-      stdout.write(ansi_codes.enableFocusTracking);
+      stdout.write(ansi_codes.enableMouseEvents);
     } else {
-      stdout.write(ansi_codes.disableFocusTracking);
+      stdout.write(ansi_codes.disableMouseEvents);
     }
   }
 
