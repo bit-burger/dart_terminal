@@ -1,3 +1,0 @@
-LIBRARY   ffi_system_access
-EXPORTS
-   system_access
