@@ -7,39 +7,50 @@ import 'ansi_escape_codes.dart' as ansi_codes;
 
 class _TerminalCell {
   bool changed = false;
-  TerminalForeground foreground = TerminalForeground();
-  TerminalColor backgroundColor = DefaultTerminalColor();
+  TerminalForeground fg = TerminalForeground();
+  TerminalColor bg = DefaultTerminalColor();
+  TerminalForeground? newFg;
+  TerminalColor? newBg;
 
-  void draw(TerminalForeground? foreground, TerminalColor? backgroundColor) {
-    if (foreground == null) {
-      if (foreground == TerminalForeground()) {
-        if (this.backgroundColor != backgroundColor) {
-          changed = true;
-          this.backgroundColor = backgroundColor!;
-        }
-      } else {
-        changed = true;
-        this.foreground = TerminalForeground();
-        this.backgroundColor = backgroundColor!;
-      }
-    } else {
-      if (this.foreground == foreground) {
-        if (backgroundColor != null &&
-            this.backgroundColor != backgroundColor) {
-          changed = true;
-          this.backgroundColor = backgroundColor;
-        }
-      } else {
-        changed = true;
-        this.foreground = foreground;
-        if (backgroundColor != null) this.backgroundColor = backgroundColor;
-      }
+  void draw(TerminalForeground? fg, TerminalColor? bg) {
+    assert(fg != null || bg != null);
+
+    newFg = fg;
+    if (bg != null) {
+      newBg = bg;
     }
   }
 
+  bool calculateDifference() {
+    if (newFg == null) {
+      if (newFg == const TerminalForeground()) {
+        if (bg != newBg) {
+          bg = newBg!;
+          return true;
+        }
+      } else {
+        changed = true;
+        fg = const TerminalForeground();
+        bg = newBg!;
+      }
+    } else {
+      if (fg == newFg) {
+        if (newBg != null && bg != newBg) {
+          bg = newBg!;
+          return true;
+        }
+      } else {
+        fg = newFg!;
+        if (newBg != null) bg = newBg!;
+        return true;
+      }
+    }
+    return false;
+  }
+
   void reset() {
-    foreground = TerminalForeground();
-    backgroundColor = DefaultTerminalColor();
+    fg = TerminalForeground();
+    bg = DefaultTerminalColor();
     changed = false;
   }
 }
@@ -198,8 +209,9 @@ class AnsiTerminalScreen {
         if (!cell.changed || !(Position.zero & size).contains(pos)) continue cl;
         redrawBuff.write(ansi_codes.cursorTo(pos.x + 1, pos.y + 1));
         do {
-          _transition(cell.foreground.style, cell.backgroundColor);
-          redrawBuff.writeCharCode(cell.foreground.codePoint);
+          cell.changed = false;
+          _transition(cell.fg.style, cell.bg);
+          redrawBuff.writeCharCode(cell.fg.codePoint);
           pos = Position(pos.x + 1, pos.y);
           cell = _screenBuffer[pos.y][pos.x];
         } while ((Position.zero & size).contains(pos) && cell.changed);
@@ -210,13 +222,14 @@ class AnsiTerminalScreen {
         bool lastWritten = false;
         for (int i = 0; i < size.width; i++) {
           final cell = _screenBuffer[j][i];
-          if (cell.changed) {
+          if (cell.changed && cell.calculateDifference()) {
             if (!lastWritten) {
               redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
             }
-            _transition(cell.foreground.style, cell.backgroundColor);
-            redrawBuff.writeCharCode(cell.foreground.codePoint);
+            _transition(cell.fg.style, cell.bg);
+            redrawBuff.writeCharCode(cell.fg.codePoint);
             lastWritten = true;
+            cell.changed = false;
           } else {
             lastWritten = false;
           }

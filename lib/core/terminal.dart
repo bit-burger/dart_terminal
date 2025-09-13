@@ -277,7 +277,7 @@ abstract class TerminalWindow implements TerminalCanvas {
   void setTerminalSize(Size size);
   void setTerminalTitle(String title);
   void bell();
-  void clearScreen([TerminalColor? color]);
+  void clearScreen();
   void updateScreen();
 }
 
