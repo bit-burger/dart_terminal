@@ -24,7 +24,6 @@ final window = AnsiTerminalWindow.agnostic(listener: ColorListener());
 int plus = 0;
 
 void paint() {
-  window.screen.optimizeForFullDraw();
   for (int j = 0; j < window.size.height; j++) {
     for (int i = 0; i < window.size.width; i++) {
       final color = XTermTerminalColor(color: (plus + i + j) % 256);

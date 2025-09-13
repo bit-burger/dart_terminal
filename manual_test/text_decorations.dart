@@ -45,8 +45,7 @@ TextDecorationSet s(int style) => TextDecorationSet(
 );
 
 void paint() {
-  window.screen.optimizeForFullDraw();
-  window.drawString(
+  window.drawText(
     text: "Press ctrl-A",
     style: TerminalForegroundStyle(
       textDecorations: s(style),
@@ -54,7 +53,7 @@ void paint() {
     ),
     position: Position(0, 0),
   );
-  window.drawString(
+  window.drawText(
     text: " or ctrl-S",
     style: TerminalForegroundStyle(
       textDecorations: s(~style),

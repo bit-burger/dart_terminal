@@ -19,6 +19,7 @@ class _TerminalCell {
     if (bg != null) {
       newBg = bg;
     }
+    changed = true;
   }
 
   bool calculateDifference() {
@@ -29,9 +30,9 @@ class _TerminalCell {
           return true;
         }
       } else {
-        changed = true;
         fg = const TerminalForeground();
         bg = newBg!;
+        return true;
       }
     } else {
       if (fg == newFg) {
@@ -51,6 +52,7 @@ class _TerminalCell {
   void reset() {
     fg = TerminalForeground();
     bg = DefaultTerminalColor();
+    newFg = newBg = null;
     changed = false;
   }
 }
@@ -58,45 +60,28 @@ class _TerminalCell {
 List<_TerminalCell> _rowGen(int length) =>
     List.generate(length, (_) => _TerminalCell());
 
-class _ScreenBufferChangeList {
-  final List<Position> _data;
-  int _length = 0;
-  int get length => _length;
-  int get maxLength => _data.length;
-
-  _ScreenBufferChangeList(int maxLength)
-    : _data = List.filled(maxLength, Position(0, 0), growable: false);
-
-  void addPosition(Position position) {
-    _data[_length] = position;
-    _length++;
-  }
-
-  void clear() {
-    _length = 0;
-  }
-
-  operator [](int i) {
-    assert(i < length);
-    return _data[i];
-  }
-}
-
 class AnsiTerminalScreen {
   final List<List<_TerminalCell>> _screenBuffer;
-  final _ScreenBufferChangeList _changeList;
-  bool _usingChangeListForNextFlush = true;
-  AnsiTerminalScreen(Size size, int maxChangeListLength)
+  final List<bool> _changeList;
+
+  AnsiTerminalScreen(Size size)
     : _size = size,
       _dataSize = size,
       _screenBuffer = List.generate(size.height, (_) => _rowGen(size.width)),
-      _changeList = _ScreenBufferChangeList(maxChangeListLength);
+      _changeList = List.filled(size.height, false, growable: true);
   Size _size;
   Size _dataSize;
 
   Size get size => _size;
 
   void resize(Size size) {
+    if (_size.height < size.height) {
+      _changeList.addAll(
+        List.generate(size.height - _size.height, (_) => false),
+      );
+    } else {
+      _changeList.length = size.height;
+    }
     if (_dataSize.width < size.width) {
       for (final row in _screenBuffer) {
         row.addAll(_rowGen(size.width - _dataSize.width));
@@ -116,25 +101,12 @@ class AnsiTerminalScreen {
   }
 
   void reset() {
-    _changeList.clear();
-    for (int i = 0; i < size.width; i++) {
-      for (int j = 0; j < size.height; j++) {
+    for (int j = 0; j < size.height; j++) {
+      _changeList[j] = false;
+      for (int i = 0; i < size.width; i++) {
         _screenBuffer[j][i].reset();
       }
     }
-  }
-
-  void optimizeForFullDraw() {
-    _usingChangeListForNextFlush = false;
-  }
-
-  bool _checkCanUseChangeList(int additions) {
-    if (!_usingChangeListForNextFlush) return false;
-    if (_changeList.length + additions > _changeList.maxLength) {
-      _usingChangeListForNextFlush = false;
-      return false;
-    }
-    return true;
   }
 
   void drawPoint({
@@ -143,10 +115,8 @@ class AnsiTerminalScreen {
     TerminalForeground? foreground,
   }) {
     if (!(Position.zero & _size).contains(position)) return;
+    _changeList[position.y] = true;
     _screenBuffer[position.y][position.x].draw(foreground, backgroundColor);
-    if (_checkCanUseChangeList(1)) {
-      _changeList.addPosition(position);
-    }
   }
 
   void drawRect({
@@ -155,27 +125,20 @@ class AnsiTerminalScreen {
     TerminalForeground? foreground,
   }) {
     rect = rect.clip(Position.zero & _size);
-    if (_checkCanUseChangeList(rect.height)) {
-      for (int y = rect.y1; y <= rect.y2; y++) {
-        _changeList.addPosition(Position(y, rect.x1));
-        for (int x = rect.x1; x <= rect.x2; x++) {
-          _screenBuffer[y][x].draw(foreground, backgroundColor);
-        }
-      }
-    } else {
-      for (int y = rect.y1; y <= rect.y2; y++) {
-        for (int x = rect.x1; x <= rect.x2; x++) {
-          _screenBuffer[y][x].draw(foreground, backgroundColor);
-        }
+    for (int y = rect.y1; y <= rect.y2; y++) {
+      _changeList[y] = true;
+      for (int x = rect.x1; x <= rect.x2; x++) {
+        _screenBuffer[y][x].draw(foreground, backgroundColor);
       }
     }
   }
 
-  void drawString({
+  void drawText({
     required String text,
     required TerminalForegroundStyle? style,
     required Position position,
   }) {
+    _changeList[position.y] = true;
     for (int i = 0; i < text.length; i++) {
       int codepoint = text.codeUnitAt(i);
       final charPosition = Position(position.x + i, position.y);
@@ -195,48 +158,30 @@ class AnsiTerminalScreen {
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 
+  // more optimizations possible (only write x coordinate)
   void drawChanges() {
-    if (_usingChangeListForNextFlush && _changeList.maxLength == 0) return;
     redrawBuff.clear();
     redrawBuff.write(ansi_codes.resetAllFormats);
     currentFg = TerminalForegroundStyle();
     currentBg = DefaultTerminalColor();
-    if (_usingChangeListForNextFlush) {
-      cl:
-      for (int i = 0; i < _changeList.maxLength; i++) {
-        Position pos = _changeList[i];
-        _TerminalCell cell = _screenBuffer[pos.y][pos.x];
-        if (!cell.changed || !(Position.zero & size).contains(pos)) continue cl;
-        redrawBuff.write(ansi_codes.cursorTo(pos.x + 1, pos.y + 1));
-        do {
-          cell.changed = false;
+    for (int j = 0; j < size.height; j++) {
+      if (!_changeList[j]) continue;
+      bool lastWritten = false;
+      for (int i = 0; i < size.width; i++) {
+        final cell = _screenBuffer[j][i];
+        if (cell.changed && cell.calculateDifference()) {
+          if (!lastWritten) {
+            redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
+          }
           _transition(cell.fg.style, cell.bg);
           redrawBuff.writeCharCode(cell.fg.codePoint);
-          pos = Position(pos.x + 1, pos.y);
-          cell = _screenBuffer[pos.y][pos.x];
-        } while ((Position.zero & size).contains(pos) && cell.changed);
-      }
-    } else {
-      for (int j = 0; j < size.height; j++) {
-        // more optimizations possible (only write x coordinate)
-        bool lastWritten = false;
-        for (int i = 0; i < size.width; i++) {
-          final cell = _screenBuffer[j][i];
-          if (cell.changed && cell.calculateDifference()) {
-            if (!lastWritten) {
-              redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
-            }
-            _transition(cell.fg.style, cell.bg);
-            redrawBuff.writeCharCode(cell.fg.codePoint);
-            lastWritten = true;
-            cell.changed = false;
-          } else {
-            lastWritten = false;
-          }
+          lastWritten = true;
+          cell.changed = false;
+        } else {
+          lastWritten = false;
         }
       }
     }
-    _usingChangeListForNextFlush = true;
     _transition(TerminalForegroundStyle(), DefaultTerminalColor());
     stdout.write(redrawBuff.toString());
   }

@@ -132,7 +132,7 @@ class AnsiTerminalWindow extends TerminalWindow
       ..addListener(this);
     controller.setInputMode(true);
     _cursorPosition = await _getCursorPosition();
-    screen = AnsiTerminalScreen(size, 1000);
+    screen = AnsiTerminalScreen(size);
   }
 
   @override
@@ -276,7 +276,6 @@ class AnsiTerminalWindow extends TerminalWindow
   void resizeEvent() {
     screen.reset();
     screen.resize(size);
-    screen.optimizeForFullDraw();
     controller.clearScreen();
     listener.screenResize(size);
   }
@@ -332,14 +331,18 @@ class AnsiTerminalWindow extends TerminalWindow
   );
 
   @override
-  void drawString({
+  void drawText({
     required String text,
     required Position position,
     TerminalForegroundStyle? style,
-  }) => screen.drawString(text: text, style: style, position: position);
+  }) => screen.drawText(text: text, style: style, position: position);
 
   @override
-  void clearScreen([TerminalColor? color]) => throw "Not implemented yet";
+  // TODO: should use color (and add to super class)
+  void clearScreen([TerminalColor? color]) {
+    screen.reset();
+    controller.clearScreen();
+  }
 
   @override
   void updateScreen() {

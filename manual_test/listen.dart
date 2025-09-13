@@ -53,5 +53,4 @@ final window = AnsiTerminalWindow.agnostic(listener: ControlTerminalInputListene
 void main() async {
   await window.attach();
   stdout.write("start;");
-  window.screen.optimizeForFullDraw();
 }

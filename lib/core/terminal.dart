@@ -356,7 +356,7 @@ abstract class TerminalClipCanvas extends TerminalCanvas {
 abstract class TerminalCanvas {
   Size get size;
 
-  void drawString({
+  void drawText({
     required String text,
     required Position position,
     TerminalForegroundStyle? style,
