@@ -1,4 +1,0 @@
-/Users/tonyborchert/Documents/Flutter/dart-tui/bin/hello_library/CMakeFiles/hello_library.dir
-/Users/tonyborchert/Documents/Flutter/dart-tui/bin/hello_library/CMakeFiles/hello_test.dir
-/Users/tonyborchert/Documents/Flutter/dart-tui/bin/hello_library/CMakeFiles/edit_cache.dir
-/Users/tonyborchert/Documents/Flutter/dart-tui/bin/hello_library/CMakeFiles/rebuild_cache.dir
