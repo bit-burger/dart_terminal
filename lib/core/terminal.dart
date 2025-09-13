@@ -358,8 +358,8 @@ abstract class TerminalCanvas {
 
   void drawString({
     required String text,
-    required TerminalForegroundStyle? foreground,
     required Position position,
+    TerminalForegroundStyle? style,
   });
 
   void drawRect({

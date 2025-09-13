@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:io' show stdout;
 
 import 'package:dart_tui/core/style.dart';
@@ -32,6 +31,7 @@ class _TerminalCell {
         }
       } else {
         changed = true;
+        this.foreground = foreground;
         if (backgroundColor != null) this.backgroundColor = backgroundColor;
       }
     }
@@ -105,6 +105,7 @@ class AnsiTerminalScreen {
   }
 
   void reset() {
+    _changeList.clear();
     for (int i = 0; i < size.width; i++) {
       for (int j = 0; j < size.height; j++) {
         _screenBuffer[j][i].reset();
@@ -184,11 +185,25 @@ class AnsiTerminalScreen {
   late TerminalColor currentBg;
 
   void drawChanges() {
+    if (_usingChangeListForNextFlush && _changeList.maxLength == 0) return;
     redrawBuff.clear();
     redrawBuff.write(ansi_codes.resetAllFormats);
     currentFg = TerminalForegroundStyle();
     currentBg = DefaultTerminalColor();
     if (_usingChangeListForNextFlush) {
+      cl:
+      for (int i = 0; i < _changeList.maxLength; i++) {
+        Position pos = _changeList[i];
+        _TerminalCell cell = _screenBuffer[pos.y][pos.x];
+        if (!cell.changed || !(Position.zero & size).contains(pos)) continue cl;
+        redrawBuff.write(ansi_codes.cursorTo(pos.x + 1, pos.y + 1));
+        do {
+          _transition(cell.foreground.style, cell.backgroundColor);
+          redrawBuff.writeCharCode(cell.foreground.codePoint);
+          pos = Position(pos.x + 1, pos.y);
+          cell = _screenBuffer[pos.y][pos.x];
+        } while ((Position.zero & size).contains(pos) && cell.changed);
+      }
     } else {
       for (int j = 0; j < size.height; j++) {
         // more optimizations possible (only write x coordinate)
@@ -199,7 +214,7 @@ class AnsiTerminalScreen {
             if (!lastWritten) {
               redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
             }
-            transition(cell.foreground.style, cell.backgroundColor);
+            _transition(cell.foreground.style, cell.backgroundColor);
             redrawBuff.writeCharCode(cell.foreground.codePoint);
             lastWritten = true;
           } else {
@@ -209,23 +224,23 @@ class AnsiTerminalScreen {
       }
     }
     _usingChangeListForNextFlush = true;
-    transition(TerminalForegroundStyle(), DefaultTerminalColor());
+    _transition(TerminalForegroundStyle(), DefaultTerminalColor());
     stdout.write(redrawBuff.toString());
   }
 
-  bool firstParameter = true;
+  bool _firstParameter = true;
 
   void _writeParameter(String s) {
-    redrawBuff.write(s);
-    if (!firstParameter) {
+    if (!_firstParameter) {
       redrawBuff.writeCharCode(59);
     }
-    firstParameter = false;
+    redrawBuff.write(s);
+    _firstParameter = false;
   }
 
-  void transition(TerminalForegroundStyle fg, TerminalColor bg) {
-    final fromBitfield = fg.textDecorations.bitField;
-    final toBitfield = currentFg.textDecorations.bitField;
+  void _transition(TerminalForegroundStyle fg, TerminalColor bg) {
+    final fromBitfield = currentFg.textDecorations.bitField;
+    final toBitfield = fg.textDecorations.bitField;
     final textDecorationsDiff = fromBitfield != toBitfield;
     final foregroundColorDiff =
         fg.color.comparisonCode != currentFg.color.comparisonCode;
@@ -245,42 +260,38 @@ class AnsiTerminalScreen {
         redrawBuff.write("${ansi_codes.CSI}${bg.termRepBackground}m");
         currentBg = bg;
       }
-      return;
     } else if (toBitfield == 0) {
-      if (foregroundColorDiff && backgroundColorDiff) {
-        redrawBuff.write(
-          "${ansi_codes.CSI}0;${fg.color.termRepForeground};"
-          "${bg.termRepBackground}m",
-        );
-        currentFg = fg;
-        currentBg = bg;
-      } else if (foregroundColorDiff) {
-        redrawBuff.write("${ansi_codes.CSI}0;${fg.color.termRepForeground}m");
-        currentFg = fg;
+      redrawBuff.write(
+        "${ansi_codes.CSI}0;${fg.color.termRepForeground};"
+        "${bg.termRepBackground}m",
+      );
+      currentFg = fg;
+      currentBg = bg;
+    } else {
+      _firstParameter = true;
+      redrawBuff.write(ansi_codes.CSI);
+      currentFg = fg;
+      if (foregroundColorDiff) {
+        _writeParameter(fg.color.termRepForeground);
       } else if (backgroundColorDiff) {
-        redrawBuff.write("${ansi_codes.CSI}0;${bg.termRepBackground}m");
+        _writeParameter(fg.color.termRepBackground);
         currentBg = bg;
-      } else {
-        redrawBuff.write("${ansi_codes.CSI}0m");
       }
-      return;
-    }
-    firstParameter = true;
-    redrawBuff.write(ansi_codes.CSI);
-    final changedBitfield = fromBitfield ^ toBitfield;
-    final addedBitField = toBitfield & changedBitfield;
-    for (var i = 0; i <= TextDecoration.highestBitFlag; i++) {
-      final flag = 1 << i;
-      if (flag & changedBitfield != 0) {
-        final decoration = TextDecoration.values[i];
-        if (flag & addedBitField != 0) {
-          _writeParameter(decoration.onCode);
-        } else {
-          _writeParameter(decoration.offCode);
+      final changedBitfield = fromBitfield ^ toBitfield;
+      final addedBitField = toBitfield & changedBitfield;
+      for (var i = 0; i <= TextDecoration.highestBitFlag; i++) {
+        final flag = 1 << i;
+        if (flag & changedBitfield != 0) {
+          final decoration = TextDecoration.values[i];
+          if (flag & addedBitField != 0) {
+            _writeParameter(decoration.onCode);
+          } else {
+            _writeParameter(decoration.offCode);
+          }
         }
       }
+      // TODO: optimization to use reset like \e[0;...;...m
+      redrawBuff.writeCharCode(109);
     }
-    // TODO: optimization to use reset like \e[0;...;...m
-    redrawBuff.writeCharCode(109);
   }
 }

@@ -161,7 +161,7 @@ abstract class _BaseIntTerminalColor extends TerminalColor {
     required int comparisonCodeStart,
   }) : super._(
          rgb,
-         termRepBackground,
+         termRepForeground,
          termRepBackground,
          color + comparisonCodeStart,
        );

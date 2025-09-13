@@ -334,9 +334,9 @@ class AnsiTerminalWindow extends TerminalWindow
   @override
   void drawString({
     required String text,
-    required TerminalForegroundStyle? foreground,
     required Position position,
-  }) => screen.drawString(text: text, style: foreground, position: position);
+    TerminalForegroundStyle? style,
+  }) => screen.drawString(text: text, style: style, position: position);
 
   @override
   void clearScreen([TerminalColor? color]) => throw "Not implemented yet";
