@@ -112,7 +112,7 @@ enum MouseButton { left, right, middle, button8, button9, button10, button11 }
 
 enum MouseButtonPressEventType { press, release }
 
-abstract class TerminalInputListener {
+abstract interface class TerminalListener {
   void screenResize(Size size);
 
   void input(String s);
@@ -124,9 +124,64 @@ abstract class TerminalInputListener {
   void mouseEvent(MouseEvent event);
 
   void focusChange(bool isFocused);
+
+  factory TerminalListener.delegate({
+    void Function(ControlCharacter) controlCharacter,
+    void Function(bool) focusChange,
+    void Function(String) input,
+    void Function(MouseEvent) mouseEvent,
+    void Function(Size) screenResize,
+    void Function(AllowedSignal) signal,
+  }) = _LambdaTerminalListener;
 }
 
-class DefaultTerminalInputListener extends TerminalInputListener {
+class _LambdaTerminalListener implements TerminalListener {
+  final void Function(ControlCharacter) _controlCharacter;
+  final void Function(bool) _focusChange;
+  final void Function(String) _input;
+  final void Function(MouseEvent) _mouseEvent;
+  final void Function(Size) _screenResize;
+  final void Function(AllowedSignal) _signal;
+
+  static void _(_) {}
+
+  const _LambdaTerminalListener({
+    void Function(ControlCharacter) controlCharacter = _,
+    void Function(bool) focusChange = _,
+    void Function(String) input = _,
+    void Function(MouseEvent) mouseEvent = _,
+    void Function(Size) screenResize = _,
+    void Function(AllowedSignal) signal = _,
+  }) : _controlCharacter = controlCharacter,
+       _focusChange = focusChange,
+       _input = input,
+       _mouseEvent = mouseEvent,
+       _screenResize = screenResize,
+       _signal = signal;
+
+  @override
+  void controlCharacter(ControlCharacter controlCharacter) =>
+      _controlCharacter(controlCharacter);
+
+  @override
+  void focusChange(bool isFocused) => _focusChange(isFocused);
+
+  @override
+  void input(String s) => _input(s);
+
+  @override
+  void mouseEvent(MouseEvent event) => _mouseEvent(event);
+
+  @override
+  void screenResize(Size size) => _screenResize(size);
+
+  @override
+  void signal(AllowedSignal signal) => _signal(signal);
+}
+
+class DefaultTerminalListener implements TerminalListener {
+  const DefaultTerminalListener();
+
   @override
   void controlCharacter(ControlCharacter controlCharacter) {}
 
@@ -158,7 +213,7 @@ enum TerminalCapability {
   /// Support for [RGBTerminalColor]
   trueColors,
 
-  /// Support for [TerminalInputListener.mouseEvent]
+  /// Support for [TerminalListener.mouseEvent]
   mouse,
 
   /// Support for at least [TextDecorationSet.slowBlink]
@@ -185,11 +240,13 @@ enum TerminalCapability {
 }
 
 abstract class TerminalWindow implements TerminalCanvas {
-  List<TerminalInputListener> listeners = [];
+  final TerminalListener listener;
   bool _isAttached = true;
   bool _isDestroyed = false;
 
-  Position get cursorPosition;
+  TerminalWindow({required this.listener});
+
+  Position? get cursorPosition;
 
   // also handle sigint etc...
   // raw scroll mode and stuff like that
@@ -208,36 +265,26 @@ abstract class TerminalWindow implements TerminalCanvas {
         "TerminalWindow is already destroyed, cannot destroy again.",
       );
     }
-    if(!_isAttached) {
-      throw StateError(
-        "TerminalWindow has not been attached, cannot destroy.",
-      );
+    if (!_isAttached) {
+      throw StateError("TerminalWindow has not been attached, cannot destroy.");
     }
     _isDestroyed = true;
   }
 
-  void addListener(TerminalInputListener listener) {
-    listeners.add(listener);
-  }
-
-  void removeListener(TerminalInputListener listener) {
-    listeners.remove(listener);
-  }
-
   bool supportsCapability(TerminalCapability capability);
 
-  void changeCursorVisibility({required bool hiding});
-  void changeTerminalSize(Size size);
-  void changeTerminalTitle(String title);
-  void changeCursorPosition(Position position);
+  void setCursor([Position? position]);
+  void setTerminalSize(Size size);
+  void setTerminalTitle(String title);
   void bell();
-  void writeToScreen();
+  void clearScreen([TerminalColor? color]);
+  void updateScreen();
 }
 
 extension type const Size._(({int width, int height}) _) {
   const Size(int width, int height) : this._((width: width, height: height));
   int get width => _.width;
-  int get height => _.width;
+  int get height => _.height;
 }
 
 extension type const Position._(({int x, int y}) _) {

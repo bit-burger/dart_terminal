@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:dart_tui/core/terminal.dart';
 
 abstract interface class TerminalSizeTracker {
-  Size get terminalSize;
+  Size get currentSize;
   void addListener(TerminalSizeListener listener);
   void removeListener(TerminalSizeListener listener);
   void startTracking();
@@ -30,7 +30,7 @@ class PosixTerminalSizeTracker extends TerminalSizeTracker {
   late Size _currentSize;
 
   @override
-  Size get terminalSize => _currentSize;
+  Size get currentSize => _currentSize;
 
   @override
   void addListener(TerminalSizeListener listener) => _listeners.add(listener);
@@ -80,7 +80,7 @@ class PollingTerminalSizeTracker extends TerminalSizeTracker {
   });
 
   @override
-  Size get terminalSize => _currentSize;
+  Size get currentSize => _currentSize;
 
   @override
   void addListener(TerminalSizeListener listener) => _listeners.add(listener);

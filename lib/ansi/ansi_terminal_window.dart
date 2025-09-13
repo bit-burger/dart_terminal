@@ -12,17 +12,21 @@ import 'ansi_terminal_controller.dart';
 
 class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   final TerminalController controller;
-  final TerminalCapabilitiesDetector capabilitiesDetector;
-  final TerminalSizeTracker sizeTracker;
+  final TerminalCapabilitiesDetector _capabilitiesDetector;
+  final TerminalSizeTracker _sizeTracker;
+  final TerminalListener? listener;
 
   AnsiTerminalWindowFactory({
+    required this.listener,
     required this.controller,
-    required this.capabilitiesDetector,
-    required this.sizeTracker,
-  });
+    required TerminalCapabilitiesDetector capabilitiesDetector,
+    required TerminalSizeTracker sizeTracker,
+  }) : _sizeTracker = sizeTracker,
+       _capabilitiesDetector = capabilitiesDetector;
 
   factory AnsiTerminalWindowFactory.agnostic({
     Duration? terminalSizePollingInterval,
+    TerminalListener? listener,
   }) {
     final controller = AnsiTerminalController();
     final capabilitiesDetector = TerminalCapabilitiesDetector.agnostic();
@@ -34,14 +38,16 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
       controller: controller,
       capabilitiesDetector: capabilitiesDetector,
       sizeTracker: sizeTracker,
+      listener: listener,
     );
   }
 
   @override
   AnsiTerminalWindow createWindow() => AnsiTerminalWindow(
     controller: controller,
-    capabilitiesDetector: capabilitiesDetector,
-    sizeTracker: sizeTracker,
+    capabilitiesDetector: _capabilitiesDetector,
+    sizeTracker: _sizeTracker,
+    listener: listener ?? DefaultTerminalListener(),
   );
 }
 
@@ -75,23 +81,27 @@ class AnsiTerminalWindow extends TerminalWindow
   Completer<Position>? _cursorPositionCompleter;
 
   @override
-  Position get cursorPosition => _cursorPosition;
+  Position? get cursorPosition => _cursorHidden ? null : _cursorPosition;
+  bool _cursorHidden = false;
   late Position _cursorPosition;
 
   @override
-  Size get size => Size(io.stdout.terminalColumns, io.stdout.terminalLines);
+  Size get size => sizeTracker.currentSize;
 
   AnsiTerminalWindow({
     required this.controller,
     required this.capabilitiesDetector,
     required this.sizeTracker,
-  });
+    required TerminalListener listener,
+  }) : super(listener: listener);
 
-  factory AnsiTerminalWindow.agnostic({Duration? terminalSizePollingInterval}) {
-    return AnsiTerminalWindowFactory.agnostic(
-      terminalSizePollingInterval: terminalSizePollingInterval,
-    ).createWindow();
-  }
+  factory AnsiTerminalWindow.agnostic({
+    TerminalListener? listener,
+    Duration? terminalSizePollingInterval,
+  }) => AnsiTerminalWindowFactory.agnostic(
+    terminalSizePollingInterval: terminalSizePollingInterval,
+    listener: listener,
+  ).createWindow();
 
   Future<Position> _getCursorPosition() {
     io.stdout.write(ansi_codes.cursorPositionQuery);
@@ -113,9 +123,7 @@ class AnsiTerminalWindow extends TerminalWindow
     for (final signal in AllowedSignal.values) {
       _subscriptions.add(
         signal.processSignal().watch().listen((_) {
-          for (final listener in listeners) {
-            listener.signal(signal);
-          }
+          listener.signal(signal);
         }),
       );
     }
@@ -147,18 +155,19 @@ class AnsiTerminalWindow extends TerminalWindow
   }
 
   bool _tryToInterpretControlCharacter(List<int> input) {
+    // TODO: handle multiple control characters at once
     if (input[0] >= 0x01 && input[0] <= 0x1a) {
       // Ctrl+A thru Ctrl+Z are mapped to the 1st-26th entries in the
       // enum, so it's easy to convert them across
-      _controlCharacter(ControlCharacter.values[input[0] - 1]);
+      listener.controlCharacter(ControlCharacter.values[input[0] - 1]);
       return true;
     }
     if (input[0] == 127) {
-      _controlCharacter(ControlCharacter.wordBackspace);
+      listener.controlCharacter(ControlCharacter.wordBackspace);
       return true;
     }
     if (input[0] == 27 && input.length == 1) {
-      _controlCharacter(ControlCharacter.escape);
+      listener.controlCharacter(ControlCharacter.escape);
       return true;
     }
     // reads for CSI (can be ESC[ or just CSI)
@@ -172,7 +181,7 @@ class AnsiTerminalWindow extends TerminalWindow
     // focus
     if (input.first == 73 || input.first == 79) {
       assert(input.length == 1);
-      _focusEvent(input.first == 73);
+      listener.focusChange(input.first == 73);
       return true;
     }
     // mouse reporting https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
@@ -195,7 +204,7 @@ class AnsiTerminalWindow extends TerminalWindow
       if (isMotion) {
         assert(lowButton == 3);
         assert(isPrimaryAction);
-        _mouseEvent(MouseHoverMotionEvent(shift, meta, ctrl, pos));
+        listener.mouseEvent(MouseHoverMotionEvent(shift, meta, ctrl, pos));
       } else if (isScroll) {
         assert(isPrimaryAction);
         final (xScroll, yScroll) = switch (lowButton) {
@@ -205,7 +214,9 @@ class AnsiTerminalWindow extends TerminalWindow
           3 => (-1, 0),
           _ => throw StateError(""),
         };
-        _mouseEvent(MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll));
+        listener.mouseEvent(
+          MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll),
+        );
       } else {
         final btn = switch ((usingExtraButton, lowButton)) {
           (false, 0) => MouseButton.left,
@@ -220,7 +231,9 @@ class AnsiTerminalWindow extends TerminalWindow
         final type = isPrimaryAction
             ? MouseButtonPressEventType.press
             : MouseButtonPressEventType.release;
-        _mouseEvent(MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type));
+        listener.mouseEvent(
+          MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type),
+        );
       }
       return true;
     }
@@ -244,17 +257,17 @@ class AnsiTerminalWindow extends TerminalWindow
     // other control characters
     switch (input[0]) {
       case 65:
-        _controlCharacter(ControlCharacter.arrowUp);
+        listener.controlCharacter(ControlCharacter.arrowUp);
       case 66:
-        _controlCharacter(ControlCharacter.arrowDown);
+        listener.controlCharacter(ControlCharacter.arrowDown);
       case 67:
-        _controlCharacter(ControlCharacter.arrowRight);
+        listener.controlCharacter(ControlCharacter.arrowRight);
       case 68:
-        _controlCharacter(ControlCharacter.arrowLeft);
+        listener.controlCharacter(ControlCharacter.arrowLeft);
       case 72:
-        _controlCharacter(ControlCharacter.home);
+        listener.controlCharacter(ControlCharacter.home);
       case 70:
-        _controlCharacter(ControlCharacter.end);
+        listener.controlCharacter(ControlCharacter.end);
     }
     return true;
   }
@@ -265,35 +278,12 @@ class AnsiTerminalWindow extends TerminalWindow
     screen.resize(size);
     screen.optimizeForFullDraw();
     controller.clearScreen();
-    for (final listener in listeners) {
-      listener.screenResize(size);
-    }
-  }
-
-  void _controlCharacter(ControlCharacter controlCharacter) {
-    for (final listener in listeners) {
-      listener.controlCharacter(controlCharacter);
-    }
-  }
-
-  void _focusEvent(bool isFocused) {
-    for (final listener in listeners) {
-      listener.focusChange(isFocused);
-    }
-  }
-
-  void _mouseEvent(MouseEvent mouseEvent) {
-    for (final listener in listeners) {
-      listener.mouseEvent(mouseEvent);
-    }
+    listener.screenResize(size);
   }
 
   void _stdinEvent(List<int> input) {
     if (!_tryToInterpretControlCharacter(input)) {
-      for (final listener in listeners) {
-        final s = String.fromCharCodes(input);
-        listener.input(s);
-      }
+      listener.input(String.fromCharCodes(input));
     }
   }
 
@@ -301,16 +291,23 @@ class AnsiTerminalWindow extends TerminalWindow
   void bell() => controller.bell();
 
   @override
-  void changeCursorVisibility({required bool hiding}) =>
-      controller.changeCursorVisibility(hiding: hiding);
-
-  @override
-  void changeTerminalSize(Size size) =>
+  void setTerminalSize(Size size) =>
       controller.changeSize(size.width, size.height);
 
   @override
-  void changeTerminalTitle(String title) =>
-      controller.changeTerminalTitle(title);
+  void setTerminalTitle(String title) => controller.changeTerminalTitle(title);
+
+  @override
+  void setCursor([Position? position]) {
+    if ((position == null) != _cursorHidden) {
+      _cursorHidden = position == null;
+      controller.changeCursorVisibility(hiding: _cursorHidden);
+    }
+    if (position != null && position != _cursorPosition) {
+      _cursorPosition = position;
+      controller.setCursorPosition(position.x + 1, position.y);
+    }
+  }
 
   @override
   void drawPoint({
@@ -339,17 +336,21 @@ class AnsiTerminalWindow extends TerminalWindow
     required String text,
     required TerminalForegroundStyle? foreground,
     required Position position,
-  }) =>
-      screen.drawString(text: text, style: foreground, position: position);
+  }) => screen.drawString(text: text, style: foreground, position: position);
 
   @override
-  void changeCursorPosition(Position position) {
-    _cursorPosition = position;
-    controller.setCursorPosition(position.x, position.y);
+  void clearScreen([TerminalColor? color]) => throw "Not implemented yet";
+
+  @override
+  void updateScreen() {
+    screen.drawChanges();
+    if (cursorPosition != null) {
+      controller.setCursorPosition(
+        cursorPosition!.x + 1,
+        cursorPosition!.y + 1,
+      );
+    }
   }
-
-  @override
-  void writeToScreen() => screen.drawChanges(cursorPosition);
 
   @override
   bool supportsCapability(TerminalCapability capability) =>

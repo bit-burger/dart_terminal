@@ -183,7 +183,7 @@ class AnsiTerminalScreen {
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 
-  void drawChanges(Position currentCursorPosition) {
+  void drawChanges() {
     redrawBuff.clear();
     redrawBuff.write(ansi_codes.resetAllFormats);
     currentFg = TerminalForegroundStyle();
@@ -195,8 +195,10 @@ class AnsiTerminalScreen {
         bool lastWritten = false;
         for (int i = 0; i < size.width; i++) {
           final cell = _screenBuffer[j][i];
-          if(cell.changed) {
-            if (!lastWritten) redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
+          if (cell.changed) {
+            if (!lastWritten) {
+              redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
+            }
             transition(cell.foreground.style, cell.backgroundColor);
             redrawBuff.writeCharCode(cell.foreground.codePoint);
             lastWritten = true;
@@ -207,12 +209,7 @@ class AnsiTerminalScreen {
       }
     }
     _usingChangeListForNextFlush = true;
- redrawBuff.write(
-      ansi_codes.cursorTo(
-        currentCursorPosition.x + 1,
-        currentCursorPosition.y + 1,
-      ),
-    );
+    transition(TerminalForegroundStyle(), DefaultTerminalColor());
     stdout.write(redrawBuff.toString());
   }
 

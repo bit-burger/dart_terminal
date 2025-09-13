@@ -74,7 +74,7 @@ abstract class TerminalWindowCapabilities {
     throw TerminalCapabilityNotSupportedError("get cursor position");
   }
 
-  /// If to set the input mode to a manual mode,
+  /// If to set the input mode to a manual_test mode,
   /// where all inputs are given as events in [terminalEvents]
   ///
   /// This also enables all cursor events, if there are any.
