@@ -105,6 +105,7 @@ class AnsiTerminalWindow extends TerminalWindow
     controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
+      ..clearScreen()
       ..changeFocusTrackingMode(enable: true)
       ..changeMouseTrackingMode(enable: true)
       ..changeLineWrappingMode(enable: false);
@@ -136,6 +137,7 @@ class AnsiTerminalWindow extends TerminalWindow
     sizeTracker.removeListener(this);
     controller
       ..setInputMode(false)
+      ..clearScreen() // necessary?
       ..changeScreenMode(alternateBuffer: false)
       ..restoreCursorPosition()
       ..changeFocusTrackingMode(enable: false)
