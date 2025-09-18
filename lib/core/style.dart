@@ -300,3 +300,60 @@ class RGBTerminalColor extends _BaseIntTerminalColor {
         comparisonCodeStart: 1000,
       );
 }
+
+/// Source: https://github.com/onepub-dev/dart_console/blob/main/lib/src/table.dart
+
+class BorderCharSet {
+  final String glyphs;
+  const BorderCharSet.raw(this.glyphs);
+
+  int get horizontalLine => glyphs.codeUnitAt(0);
+  int get verticalLine => glyphs.codeUnitAt(1);
+  int get topLeftCorner => glyphs.codeUnitAt(2);
+  int get topRightCorner => glyphs.codeUnitAt(3);
+  int get bottomLeftCorner => glyphs.codeUnitAt(4);
+  int get bottomRightCorner => glyphs.codeUnitAt(5);
+  int get cross => glyphs.codeUnitAt(6);
+  int get teeUp => glyphs.codeUnitAt(7);
+  int get teeDown => glyphs.codeUnitAt(8);
+  int get teeLeft => glyphs.codeUnitAt(9);
+  int get teeRight => glyphs.codeUnitAt(10);
+
+  int getCorrectGlyph(bool left, bool top, bool right, bool bottom) =>
+      switch ((left, top, right, bottom)) {
+        // Horizontal
+        (true, false, true, false) => horizontalLine,
+        // Vertical
+        (false, true, false, true) => verticalLine,
+        // Corners
+        (true, true, false, false) => topLeftCorner,
+        (false, true, true, false) => topRightCorner,
+        (true, false, false, true) => bottomLeftCorner,
+        (false, false, true, true) => bottomRightCorner,
+        // Crosses / tees
+        (true, true, true, true) => cross,
+        (true, false, true, true) => teeDown,
+        (true, true, true, false) => teeUp,
+        (false, true, true, true) => teeLeft,
+        (true, true, false, true) => teeRight,
+        // Single connections (fallback)
+        (true, false, false, false) => horizontalLine,
+        (false, true, false, false) => verticalLine,
+        (false, false, true, false) => horizontalLine,
+        (false, false, false, true) => verticalLine,
+        // No lines (Not possible)
+        (false, false, false, false) => throw UnimplementedError(),
+      };
+
+  factory BorderCharSet.none() => BorderCharSet.raw('           ');
+
+  factory BorderCharSet.ascii() => BorderCharSet.raw('-|----+--||');
+
+  factory BorderCharSet.square() => BorderCharSet.raw('─│┌┐└┘┼┴┬┤├');
+
+  factory BorderCharSet.rounded() => BorderCharSet.raw('─│╭╮╰╯┼┴┬┤├');
+
+  factory BorderCharSet.bold() => BorderCharSet.raw('━┃┏┓┗┛╋┻┳┫┣');
+
+  factory BorderCharSet.double() => BorderCharSet.raw('═║╔╗╚╝╬╩╦╣╠');
+}
