@@ -21,8 +21,8 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
     switch (event) {
       case MouseScrollEvent(position: var pos, xScroll: var x, yScroll: var y):
         codePoint += x + y;
-        for (int i = -2; i <= 2; i++) {
-          for (int j = -2; j <= 2; j++) {
+        for (int i = -10; i <= 10; i++) {
+          for (int j = -10; j <= 10; j++) {
             window.drawPoint(
               position: Position(pos.x + i, pos.y + j),
               background: i != 0 || j != 0

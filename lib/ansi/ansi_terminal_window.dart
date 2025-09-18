@@ -337,6 +337,8 @@ class AnsiTerminalWindow extends TerminalWindow
     BorderDrawIdentifier? drawIdentifier,
   }) {
     drawIdentifier ??= BorderDrawIdentifier();
+    assert(rect.height > 1 && rect.width > 1, "Rect needs to be at least 2x2.");
+    screen.drawBorderBox(rect, borderStyle, foregroundColor, drawIdentifier);
   }
 
   @override
@@ -353,6 +355,13 @@ class AnsiTerminalWindow extends TerminalWindow
       "Points need to be either horizontally or vertically aligned.",
     );
     assert(from != to, "Points need to be different.");
+    screen.drawBorderLine(
+      from,
+      to,
+      borderStyle,
+      foregroundColor,
+      drawIdentifier,
+    );
   }
 
   @override

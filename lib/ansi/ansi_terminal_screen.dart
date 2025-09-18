@@ -73,7 +73,7 @@ class _TerminalCell {
     TerminalColor foregroundColor,
     BorderDrawIdentifier borderIdentifier,
   ) {
-    if (borderIdentifier.value != _borderDrawIdMask & borderState) {
+    if (borderIdentifier.value != (_borderDrawIdMask & borderState)) {
       borderState = borderIdentifier.value;
     }
     left = left || (borderState & _leftBorderMask != 0);
@@ -85,6 +85,7 @@ class _TerminalCell {
     if (right) borderState = borderState | _rightBorderMask;
     if (bottom) borderState = borderState | _bottomBorderMask;
 
+    changed = true;
     newFg = TerminalForeground(
       style: TerminalForegroundStyle(color: foregroundColor),
       codePoint: charSet.getCorrectGlyph(left, top, right, bottom),
@@ -204,40 +205,42 @@ class AnsiTerminalScreen {
   void drawBorderLine(
     Position from,
     Position to,
-    BorderCharSet borderStyle,
-    TerminalColor foregroundColor,
-    BorderDrawIdentifier drawIdentifier,
+    BorderCharSet style,
+    TerminalColor color,
+    BorderDrawIdentifier drawId,
   ) {
     if (from.x == to.x) {
       for (int y = from.y; y <= to.y; y++) {
+        _changeList[y] = true;
         final cell = _screenBuffer[y][from.x];
         cell.drawBorder(
           false,
           y != from.y,
           false,
           y != to.y,
-          borderStyle,
-          foregroundColor,
-          drawIdentifier,
+          style,
+          color,
+          drawId,
         );
       }
     } else {
-      for (int x = from.y; x <= to.y; x++) {
+      _changeList[from.y] = true;
+      for (int x = from.x; x <= to.x; x++) {
         final cell = _screenBuffer[from.y][x];
         cell.drawBorder(
           x != from.x,
           false,
           x != to.x,
           false,
-          borderStyle,
-          foregroundColor,
-          drawIdentifier,
+          style,
+          color,
+          drawId,
         );
       }
     }
   }
 
-  StringBuffer _redrawBuff = StringBuffer();
+  final StringBuffer _redrawBuff = StringBuffer();
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 

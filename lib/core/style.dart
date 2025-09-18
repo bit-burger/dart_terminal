@@ -327,16 +327,16 @@ class BorderCharSet {
         // Vertical
         (false, true, false, true) => verticalLine,
         // Corners
-        (true, true, false, false) => topLeftCorner,
-        (false, true, true, false) => topRightCorner,
-        (true, false, false, true) => bottomLeftCorner,
-        (false, false, true, true) => bottomRightCorner,
+        (true, true, false, false) => bottomRightCorner,
+        (false, true, true, false) => bottomLeftCorner,
+        (true, false, false, true) => topRightCorner,
+        (false, false, true, true) => topLeftCorner,
         // Crosses / tees
         (true, true, true, true) => cross,
         (true, false, true, true) => teeDown,
         (true, true, true, false) => teeUp,
-        (false, true, true, true) => teeLeft,
-        (true, true, false, true) => teeRight,
+        (false, true, true, true) => teeRight,
+        (true, true, false, true) => teeLeft,
         // Single connections (fallback)
         (true, false, false, false) => horizontalLine,
         (false, true, false, false) => verticalLine,
@@ -349,6 +349,8 @@ class BorderCharSet {
   factory BorderCharSet.none() => BorderCharSet.raw('           ');
 
   factory BorderCharSet.ascii() => BorderCharSet.raw('-|----+--||');
+
+  factory BorderCharSet.asciiFilled() => BorderCharSet.raw('-|+++++++++');
 
   factory BorderCharSet.square() => BorderCharSet.raw('─│┌┐└┘┼┴┬┤├');
 
