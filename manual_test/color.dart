@@ -26,7 +26,7 @@ int plus = 0;
 void paint() {
   for (int j = 0; j < window.size.height; j++) {
     for (int i = 0; i < window.size.width; i++) {
-      final color = XTermTerminalColor(color: (plus + i + j) % 256);
+      final color = XTermTerminalColor.raw((plus + i + j) % 256);
       window.drawPoint(position: Position(i, j), background: color);
     }
   }

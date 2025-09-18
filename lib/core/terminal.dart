@@ -311,6 +311,11 @@ extension type const Rect._(({int x1, int x2, int y1, int y2}) _) {
   int get y1 => _.y1;
   int get y2 => _.y2;
 
+  Position get topLeft => Position(x1, y1);
+  Position get topRight => Position(x2, y1);
+  Position get bottomRight => Position(x2, y2);
+  Position get bottomLeft => Position(x1, y2);
+
   Rect clip(Rect clip) => Rect(
     max(_.x1, clip.x1),
     min(_.x2, clip.x2),
@@ -353,8 +358,19 @@ abstract class TerminalClipCanvas extends TerminalCanvas {
   Rect? clip;
 }
 
+extension type const BorderDrawIdentifier._(int id) {
+  static int _currentId = 0;
+  BorderDrawIdentifier() : id = _currentId++;
+
+  int get value => id;
+}
+
 abstract class TerminalCanvas {
   Size get size;
+
+  static int _currentBorderDrawId = 0;
+
+  static int getUniqueBorderDrawId() => _currentBorderDrawId++;
 
   void drawText({
     required String text,
@@ -372,5 +388,20 @@ abstract class TerminalCanvas {
     required Position position,
     TerminalColor? background,
     TerminalForeground? foreground,
+  });
+
+  void drawBorderBox({
+    required Rect rect,
+    required BorderCharSet borderStyle,
+    TerminalColor foregroundColor,
+    BorderDrawIdentifier drawIdentifier,
+  });
+
+  void drawBorderLine({
+    required Position from,
+    required Position to,
+    required BorderCharSet borderStyle,
+    TerminalColor foregroundColor,
+    BorderDrawIdentifier drawIdentifier,
   });
 }

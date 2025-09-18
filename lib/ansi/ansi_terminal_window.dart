@@ -194,7 +194,7 @@ class AnsiTerminalWindow extends TerminalWindow
         input,
       ).split(";").map(int.tryParse).toList(growable: false);
       if (args.length != 3 || args.any((arg) => arg == null)) return true;
-      final btnState = args[0]!, pos = Position(args[1]!, args[2]!);
+      final btnState = args[0]!, pos = Position(args[1]! - 1, args[2]! - 1);
       final lowButton = btnState & 3;
       final shift = btnState & 4 != 0,
           meta = btnState & 8 != 0,
@@ -313,29 +313,47 @@ class AnsiTerminalWindow extends TerminalWindow
     required Position position,
     TerminalColor? background,
     TerminalForeground? foreground,
-  }) => screen.drawPoint(
-    position: position,
-    backgroundColor: background,
-    foreground: foreground,
-  );
+  }) => screen.drawPoint(position, background, foreground);
 
   @override
   void drawRect({
     required Rect rect,
     TerminalColor? background,
     TerminalForeground? foreground,
-  }) => screen.drawRect(
-    rect: rect,
-    backgroundColor: background,
-    foreground: foreground,
-  );
+  }) => screen.drawRect(rect, background, foreground);
 
   @override
   void drawText({
     required String text,
     required Position position,
     TerminalForegroundStyle? style,
-  }) => screen.drawText(text: text, style: style, position: position);
+  }) => screen.drawText(text, style, position);
+
+  @override
+  void drawBorderBox({
+    required Rect rect,
+    required BorderCharSet borderStyle,
+    TerminalColor foregroundColor = const DefaultTerminalColor(),
+    BorderDrawIdentifier? drawIdentifier,
+  }) {
+    drawIdentifier ??= BorderDrawIdentifier();
+  }
+
+  @override
+  void drawBorderLine({
+    required Position from,
+    required Position to,
+    required BorderCharSet borderStyle,
+    TerminalColor foregroundColor = const DefaultTerminalColor(),
+    BorderDrawIdentifier? drawIdentifier,
+  }) {
+    drawIdentifier ??= BorderDrawIdentifier();
+    assert(
+      from.x == to.x || from.y == to.y,
+      "Points need to be either horizontally or vertically aligned.",
+    );
+    assert(from != to, "Points need to be different.");
+  }
 
   @override
   // TODO: should use color (and add to super class)

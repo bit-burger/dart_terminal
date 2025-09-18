@@ -5,11 +5,19 @@ import 'package:ffi/ffi.dart';
 final ncurses = DynamicLibrary.open('libncurses.so');
 
 // Bind functions
-final initscr = ncurses.lookupFunction<Void Function(), void Function()>('initscr');
-final endwin = ncurses.lookupFunction<Void Function(), void Function()>('endwin');
+final initscr = ncurses.lookupFunction<Void Function(), void Function()>(
+  'initscr',
+);
+final endwin = ncurses.lookupFunction<Void Function(), void Function()>(
+  'endwin',
+);
 
 void main() {
-  initscr();
-  // ... use ncurses functions via FFI
-  endwin();
-ist}
+  final a = "a";
+  switch (a) {
+    case "a":
+      print("wuff");
+    case "b":
+      print("miaow");
+  }
+}

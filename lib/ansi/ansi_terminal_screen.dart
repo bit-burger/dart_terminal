@@ -5,12 +5,19 @@ import 'package:dart_tui/core/terminal.dart';
 
 import 'ansi_escape_codes.dart' as ansi_codes;
 
+const int _leftBorderMask = 1 << 63;
+const int _topBorderMask = 1 << 62;
+const int _rightBorderMask = 1 << 61;
+const int _bottomBorderMask = 1 << 60;
+const int _borderDrawIdMask = ~(0xF << 60);
+
 class _TerminalCell {
   bool changed = false;
   TerminalForeground fg = TerminalForeground();
   TerminalColor bg = DefaultTerminalColor();
   TerminalForeground? newFg;
   TerminalColor? newBg;
+  int borderState = 0;
 
   void draw(TerminalForeground? fg, TerminalColor? bg) {
     assert(fg != null || bg != null);
@@ -24,6 +31,7 @@ class _TerminalCell {
 
   bool calculateDifference() {
     if (newFg == null) {
+      // TODO: unnecessary check?
       if (newFg == const TerminalForeground()) {
         if (bg != newBg) {
           bg = newBg!;
@@ -54,6 +62,33 @@ class _TerminalCell {
     bg = DefaultTerminalColor();
     newFg = newBg = null;
     changed = false;
+  }
+
+  void drawBorder(
+    bool left,
+    bool top,
+    bool right,
+    bool bottom,
+    BorderCharSet charSet,
+    TerminalColor foregroundColor,
+    BorderDrawIdentifier borderIdentifier,
+  ) {
+    if (borderIdentifier.value != _borderDrawIdMask & borderState) {
+      borderState = borderIdentifier.value;
+    }
+    left = left || (borderState & _leftBorderMask != 0);
+    top = top || (borderState & _topBorderMask != 0);
+    right = right || (borderState & _rightBorderMask != 0);
+    bottom = bottom || (borderState & _bottomBorderMask != 0);
+    if (left) borderState = borderState | _leftBorderMask;
+    if (top) borderState = borderState | _topBorderMask;
+    if (right) borderState = borderState | _rightBorderMask;
+    if (bottom) borderState = borderState | _bottomBorderMask;
+
+    newFg = TerminalForeground(
+      style: TerminalForegroundStyle(color: foregroundColor),
+      codePoint: charSet.getCorrectGlyph(left, top, right, bottom),
+    );
   }
 }
 
@@ -109,21 +144,21 @@ class AnsiTerminalScreen {
     }
   }
 
-  void drawPoint({
-    required Position position,
+  void drawPoint(
+    Position position,
     TerminalColor? backgroundColor,
     TerminalForeground? foreground,
-  }) {
+  ) {
     if (!(Position.zero & _size).contains(position)) return;
     _changeList[position.y] = true;
     _screenBuffer[position.y][position.x].draw(foreground, backgroundColor);
   }
 
-  void drawRect({
-    required Rect rect,
+  void drawRect(
+    Rect rect,
     TerminalColor? backgroundColor,
     TerminalForeground? foreground,
-  }) {
+  ) {
     rect = rect.clip(Position.zero & _size);
     for (int y = rect.y1; y <= rect.y2; y++) {
       _changeList[y] = true;
@@ -133,11 +168,11 @@ class AnsiTerminalScreen {
     }
   }
 
-  void drawText({
-    required String text,
-    required TerminalForegroundStyle? style,
-    required Position position,
-  }) {
+  void drawText(
+    String text,
+    TerminalForegroundStyle? style,
+    Position position,
+  ) {
     _changeList[position.y] = true;
     for (int i = 0; i < text.length; i++) {
       int codepoint = text.codeUnitAt(i);
@@ -154,14 +189,62 @@ class AnsiTerminalScreen {
     }
   }
 
-  StringBuffer redrawBuff = StringBuffer();
+  void drawBorderBox(
+    Rect rect,
+    BorderCharSet style,
+    TerminalColor color,
+    BorderDrawIdentifier drawId,
+  ) {
+    drawBorderLine(rect.topLeft, rect.topRight, style, color, drawId);
+    drawBorderLine(rect.topRight, rect.bottomRight, style, color, drawId);
+    drawBorderLine(rect.bottomLeft, rect.bottomRight, style, color, drawId);
+    drawBorderLine(rect.topLeft, rect.bottomLeft, style, color, drawId);
+  }
+
+  void drawBorderLine(
+    Position from,
+    Position to,
+    BorderCharSet borderStyle,
+    TerminalColor foregroundColor,
+    BorderDrawIdentifier drawIdentifier,
+  ) {
+    if (from.x == to.x) {
+      for (int y = from.y; y <= to.y; y++) {
+        final cell = _screenBuffer[y][from.x];
+        cell.drawBorder(
+          false,
+          y != from.y,
+          false,
+          y != to.y,
+          borderStyle,
+          foregroundColor,
+          drawIdentifier,
+        );
+      }
+    } else {
+      for (int x = from.y; x <= to.y; x++) {
+        final cell = _screenBuffer[from.y][x];
+        cell.drawBorder(
+          x != from.x,
+          false,
+          x != to.x,
+          false,
+          borderStyle,
+          foregroundColor,
+          drawIdentifier,
+        );
+      }
+    }
+  }
+
+  StringBuffer _redrawBuff = StringBuffer();
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 
   // more optimizations possible (only write x coordinate)
   void drawChanges() {
-    redrawBuff.clear();
-    redrawBuff.write(ansi_codes.resetAllFormats);
+    _redrawBuff.clear();
+    _redrawBuff.write(ansi_codes.resetAllFormats);
     currentFg = TerminalForegroundStyle();
     currentBg = DefaultTerminalColor();
     for (int j = 0; j < size.height; j++) {
@@ -171,10 +254,10 @@ class AnsiTerminalScreen {
         final cell = _screenBuffer[j][i];
         if (cell.changed && cell.calculateDifference()) {
           if (!lastWritten) {
-            redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
+            _redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
           }
           _transition(cell.fg.style, cell.bg);
-          redrawBuff.writeCharCode(cell.fg.codePoint);
+          _redrawBuff.writeCharCode(cell.fg.codePoint);
           lastWritten = true;
           cell.changed = false;
         } else {
@@ -183,16 +266,16 @@ class AnsiTerminalScreen {
       }
     }
     _transition(TerminalForegroundStyle(), DefaultTerminalColor());
-    stdout.write(redrawBuff.toString());
+    stdout.write(_redrawBuff.toString());
   }
 
   bool _firstParameter = true;
 
   void _writeParameter(String s) {
     if (!_firstParameter) {
-      redrawBuff.writeCharCode(59);
+      _redrawBuff.writeCharCode(59);
     }
-    redrawBuff.write(s);
+    _redrawBuff.write(s);
     _firstParameter = false;
   }
 
@@ -205,34 +288,41 @@ class AnsiTerminalScreen {
     final backgroundColorDiff = bg.comparisonCode != currentBg.comparisonCode;
     if (!textDecorationsDiff) {
       if (foregroundColorDiff && backgroundColorDiff) {
-        redrawBuff.write(
+        _redrawBuff.write(
           "${ansi_codes.CSI}${fg.color.termRepForeground};"
           "${bg.termRepBackground}m",
         );
         currentFg = fg;
         currentBg = bg;
       } else if (foregroundColorDiff) {
-        redrawBuff.write("${ansi_codes.CSI}${fg.color.termRepForeground}m");
+        _redrawBuff.write("${ansi_codes.CSI}${fg.color.termRepForeground}m");
         currentFg = fg;
       } else if (backgroundColorDiff) {
-        redrawBuff.write("${ansi_codes.CSI}${bg.termRepBackground}m");
+        _redrawBuff.write("${ansi_codes.CSI}${bg.termRepBackground}m");
         currentBg = bg;
       }
     } else if (toBitfield == 0) {
-      redrawBuff.write(
-        "${ansi_codes.CSI}0;${fg.color.termRepForeground};"
-        "${bg.termRepBackground}m",
-      );
+      _firstParameter = true;
+      _redrawBuff.write(ansi_codes.CSI);
+      _writeParameter("0");
+      if (fg.color != const DefaultTerminalColor()) {
+        _writeParameter(fg.color.termRepForeground);
+      }
+      if (bg != const DefaultTerminalColor()) {
+        _writeParameter(bg.termRepBackground);
+      }
+      _redrawBuff.writeCharCode(109);
       currentFg = fg;
       currentBg = bg;
     } else {
       _firstParameter = true;
-      redrawBuff.write(ansi_codes.CSI);
+      _redrawBuff.write(ansi_codes.CSI);
       currentFg = fg;
       if (foregroundColorDiff) {
         _writeParameter(fg.color.termRepForeground);
-      } else if (backgroundColorDiff) {
-        _writeParameter(fg.color.termRepBackground);
+      }
+      if (backgroundColorDiff) {
+        _writeParameter(bg.termRepBackground);
         currentBg = bg;
       }
       final changedBitfield = fromBitfield ^ toBitfield;
@@ -249,7 +339,7 @@ class AnsiTerminalScreen {
         }
       }
       // TODO: optimization to use reset like \e[0;...;...m
-      redrawBuff.writeCharCode(109);
+      _redrawBuff.writeCharCode(109);
     }
   }
 }

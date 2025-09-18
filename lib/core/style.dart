@@ -170,24 +170,24 @@ abstract class _BaseIntTerminalColor extends TerminalColor {
 /// The 8 basic colors.
 class BasicTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 7;
-  const BasicTerminalColor({required super.color, required super.rgb})
+  const BasicTerminalColor.raw({required super.color, required super.rgb})
     : assert(color >= 0 && color < 8),
       super("${30 + color}", "${40 + color}", comparisonCodeStart: 1);
 
-  static const black = BasicTerminalColor(color: 0, rgb: 0);
-  static const red = BasicTerminalColor(color: 1, rgb: 0x00FF0000);
-  static const green = BasicTerminalColor(color: 2, rgb: 0x0000FF00);
-  static const yellow = BasicTerminalColor(color: 3, rgb: 0x00FFFF00);
-  static const blue = BasicTerminalColor(color: 4, rgb: 0x000000FF);
-  static const magenta = BasicTerminalColor(color: 5, rgb: 0x00FF00FF);
-  static const cyan = BasicTerminalColor(color: 6, rgb: 0x0000FFFF);
-  static const white = BasicTerminalColor(color: 7, rgb: 0x00FFFFFFFF);
+  static const black = BasicTerminalColor.raw(color: 0, rgb: 0);
+  static const red = BasicTerminalColor.raw(color: 1, rgb: 0x00FF0000);
+  static const green = BasicTerminalColor.raw(color: 2, rgb: 0x0000FF00);
+  static const yellow = BasicTerminalColor.raw(color: 3, rgb: 0x00FFFF00);
+  static const blue = BasicTerminalColor.raw(color: 4, rgb: 0x000000FF);
+  static const magenta = BasicTerminalColor.raw(color: 5, rgb: 0x00FF00FF);
+  static const cyan = BasicTerminalColor.raw(color: 6, rgb: 0x0000FFFF);
+  static const white = BasicTerminalColor.raw(color: 7, rgb: 0x00FFFFFFFF);
 }
 
 /// The 8 bright colors.
 class BrightTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 7;
-  const BrightTerminalColor({required super.color, required super.rgb})
+  const BrightTerminalColor.raw({required super.color, required super.rgb})
     : assert(color >= 0 && color < 8),
       super("${90 + color}", "${100 + color}", comparisonCodeStart: 10);
 
@@ -199,25 +199,26 @@ class BrightTerminalColor extends _BaseIntTerminalColor {
     }
   }
 
-  static const black = BasicTerminalColor(color: 0, rgb: 0x00050505);
-  static const red = BasicTerminalColor(color: 1, rgb: 0x00FF0505);
-  static const green = BasicTerminalColor(color: 2, rgb: 0x0005FF05);
-  static const yellow = BasicTerminalColor(color: 3, rgb: 0x00FFFF05);
-  static const blue = BasicTerminalColor(color: 4, rgb: 0x000505FF);
-  static const magenta = BasicTerminalColor(color: 5, rgb: 0x00FF05FF);
-  static const cyan = BasicTerminalColor(color: 6, rgb: 0x0005FFFF);
-  static const white = BasicTerminalColor(color: 7, rgb: 0x00FFFFFFFF);
+  static const black = BrightTerminalColor.raw(color: 0, rgb: 0x00050505);
+  static const red = BrightTerminalColor.raw(color: 1, rgb: 0x00FF0505);
+  static const green = BrightTerminalColor.raw(color: 2, rgb: 0x0005FF05);
+  static const yellow = BrightTerminalColor.raw(color: 3, rgb: 0x00FFFF05);
+  static const blue = BrightTerminalColor.raw(color: 4, rgb: 0x000505FF);
+  static const magenta = BrightTerminalColor.raw(color: 5, rgb: 0x00FF05FF);
+  static const cyan = BrightTerminalColor.raw(color: 6, rgb: 0x0005FFFF);
+  static const white = BrightTerminalColor.raw(color: 7, rgb: 0x00FFFFFFFF);
 }
 
 /// The 256 colors supported by xterm.
 /// For all 256 see: {@image <image alt='' src='/docs/xterm_256_colors.png'>}
 class XTermTerminalColor extends _BaseIntTerminalColor {
   /// The colors from 0 to 255;
-  const XTermTerminalColor({required super.color})
+  const XTermTerminalColor.raw(int color)
     : assert(color >= 0 && color < 256),
       super(
         "38;5;$color",
         "48;5;$color",
+        color: color,
         rgb: color < 16
             ? 0
             : color < 232
@@ -244,14 +245,14 @@ class XTermTerminalColor extends _BaseIntTerminalColor {
     assert(g >= 0 && g < 6);
     assert(b >= 0 && b < 6);
     final index = 16 + 36 * r + 6 * g + b;
-    return XTermTerminalColor(color: index);
+    return XTermTerminalColor.raw(index);
   }
 
   /// Grayscale (0 = dark, 23 = bright)
   factory XTermTerminalColor.grayscale(int level) {
     assert(level >= 0 && level < 24);
     final index = 232 + level;
-    return XTermTerminalColor(color: index);
+    return XTermTerminalColor.raw(index);
   }
 
   // ----------------------
