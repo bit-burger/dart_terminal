@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io' as io;
 
+import 'package:dart_tui/ansi/ansi_terminal_input_processor.dart';
 import 'package:dart_tui/ansi/ansi_terminal_screen.dart';
 import 'package:dart_tui/ansi/terminal_capabilities.dart';
 import 'package:dart_tui/ansi/terminal_size_tracker.dart';
 
 import '../core/style.dart';
 import '../core/terminal.dart';
-import 'ansi_escape_codes.dart' as ansi_codes;
 import 'ansi_terminal_controller.dart';
 import 'native_terminal_image.dart';
 
@@ -24,7 +24,6 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   factory AnsiTerminalWindowFactory.agnostic({
     Duration? terminalSizePollingInterval,
   }) {
-    final controller = AnsiTerminalController();
     final capabilitiesDetector = TerminalCapabilitiesDetector.agnostic();
     final sizeTracker = TerminalSizeTracker.agnostic(
       pollingInterval:
@@ -81,9 +80,11 @@ extension on AllowedSignal {
 
 class AnsiTerminalWindow extends TerminalWindow
     implements TerminalSizeListener {
-  late final AnsiTerminalController controller;
   final TerminalCapabilitiesDetector capabilitiesDetector;
   final TerminalSizeTracker sizeTracker;
+  final AnsiTerminalController controller = AnsiTerminalController();
+  final AnsiTerminalInputProcessor inputProcessor =
+      AnsiTerminalInputProcessor.waiting();
   late final AnsiTerminalScreen _screen;
 
   late final Set<TerminalCapability> _capabilities;
@@ -113,7 +114,7 @@ class AnsiTerminalWindow extends TerminalWindow
   ).createWindow(listener: listener);
 
   Future<Position> _getCursorPosition() {
-    io.stdout.write(ansi_codes.cursorPositionQuery);
+    controller.queryCursorPosition();
     _cursorPositionCompleter = Completer<Position>();
     return _cursorPositionCompleter!.future;
   }
@@ -121,13 +122,14 @@ class AnsiTerminalWindow extends TerminalWindow
   @override
   Future<void> attach() async {
     await super.attach();
-    controller = AnsiTerminalController()
+    controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
       ..changeFocusTrackingMode(enable: true)
       ..changeMouseTrackingMode(enable: true)
       ..changeLineWrappingMode(enable: false);
-    _subscriptions.add(io.stdin.listen(_stdinEvent));
+    inputProcessor.startListening();
+    _subscriptions.add(inputProcessor.stream.listen(_onInputEvent));
     for (final signal in AllowedSignal.values) {
       _subscriptions.add(
         signal.processSignal().watch().listen((_) {
@@ -151,6 +153,7 @@ class AnsiTerminalWindow extends TerminalWindow
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
+    inputProcessor.stopListening();
     sizeTracker.stopTracking();
     sizeTracker.removeListener(this);
     _screen
@@ -166,138 +169,30 @@ class AnsiTerminalWindow extends TerminalWindow
     _cursorPositionCompleter?.complete(Position(0, 0));
   }
 
-  bool _tryToInterpretControlCharacter(List<int> input) {
-    // TODO: handle multiple control characters at once
-    if (input[0] >= 0x01 && input[0] <= 0x1a) {
-      // Ctrl+A thru Ctrl+Z are mapped to the 1st-26th entries in the
-      // enum, so it's easy to convert them across
-      listener.controlCharacter(ControlCharacter.values[input[0] - 1]);
-      return true;
-    }
-    if (input[0] == 127) {
-      listener.controlCharacter(ControlCharacter.wordBackspace);
-      return true;
-    }
-    if (input[0] == 27 && input.length == 1) {
-      listener.controlCharacter(ControlCharacter.escape);
-      return true;
-    }
-    // reads for CSI (can be ESC[ or just CSI)
-    if (input[0] == 27 && input[1] == 91) {
-      input = input.sublist(2);
-    } else if (input[0] == 0x9b) {
-      input = input.sublist(1);
-    } else {
-      return false;
-    }
-    // focus
-    if (input.first == 73 || input.first == 79) {
-      assert(input.length == 1);
-      listener.focusChange(input.first == 73);
-      return true;
-    }
-    // mouse reporting https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-    if (input.first == 60) {
-      if (input.last != 77 && input.last != 109) return true;
-      final isPrimaryAction =
-          input.last == 77; // secondary action is release for example
-      input = input.sublist(1, input.length - 1);
-      final args = String.fromCharCodes(
-        input,
-      ).split(";").map(int.tryParse).toList(growable: false);
-      if (args.length != 3 || args.any((arg) => arg == null)) return true;
-      final btnState = args[0]!, pos = Position(args[1]! - 1, args[2]! - 1);
-      final lowButton = btnState & 3;
-      final shift = btnState & 4 != 0,
-          meta = btnState & 8 != 0,
-          ctrl = btnState & 16 != 0;
-      final isMotion = btnState & 32 != 0, isScroll = btnState & 64 != 0;
-      final usingExtraButton = btnState & 128 != 0; // for button 8-11
-      if (isMotion) {
-        assert(lowButton == 3);
-        assert(isPrimaryAction);
-        listener.mouseEvent(MouseHoverMotionEvent(shift, meta, ctrl, pos));
-      } else if (isScroll) {
-        assert(isPrimaryAction);
-        final (xScroll, yScroll) = switch (lowButton) {
-          0 => (0, -1),
-          1 => (0, 1),
-          2 => (1, 0),
-          3 => (-1, 0),
-          _ => throw StateError(""),
-        };
-        listener.mouseEvent(
-          MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll),
-        );
-      } else {
-        final btn = switch ((usingExtraButton, lowButton)) {
-          (false, 0) => MouseButton.left,
-          (false, 1) => MouseButton.middle,
-          (false, 2) => MouseButton.right,
-          (true, 0) => MouseButton.button8,
-          (true, 1) => MouseButton.button9,
-          (true, 2) => MouseButton.button10,
-          (true, 3) => MouseButton.button11,
-          _ => throw StateError("Release button cannot be pressed"),
-        };
-        final type = isPrimaryAction
-            ? MouseButtonPressEventType.press
-            : MouseButtonPressEventType.release;
-        listener.mouseEvent(
-          MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type),
-        );
-      }
-      return true;
-    }
-    // cursor position
-    if (input.last == 82) {
-      int semicolonIndex = input.indexOf(59);
-      if (semicolonIndex == -1) return true;
-      final x = int.tryParse(
-        String.fromCharCodes(input.sublist(0, semicolonIndex)),
-      );
-      final y = int.tryParse(
-        String.fromCharCodes(
-          input.sublist(semicolonIndex + 1, input.length - 1),
-        ),
-      );
-      if (x == null || y == null) return true;
-      _cursorPositionCompleter?.complete(Position(x - 1, y - 1));
+  void _onInputEvent(Object event) {
+    if (event is CursorPositionEvent) {
+      _cursorPositionCompleter?.complete(event.position);
       _cursorPositionCompleter = null;
-      return true;
+    } else if (event is String) {
+      listener.input(event);
+    } else if (event is MouseEvent) {
+      listener.mouseEvent(event);
+    } else if (event is ControlCharacter) {
+      listener.controlCharacter(event);
+    } else if (event is FocusEvent) {
+      listener.focusChange(event.isFocused);
     }
-    // other control characters
-    switch (input[0]) {
-      case 65:
-        listener.controlCharacter(ControlCharacter.arrowUp);
-      case 66:
-        listener.controlCharacter(ControlCharacter.arrowDown);
-      case 67:
-        listener.controlCharacter(ControlCharacter.arrowRight);
-      case 68:
-        listener.controlCharacter(ControlCharacter.arrowLeft);
-      case 72:
-        listener.controlCharacter(ControlCharacter.home);
-      case 70:
-        listener.controlCharacter(ControlCharacter.end);
-    }
-    return true;
   }
 
   @override
   void resizeEvent() {
+    /// TODO: maybe do this with stream as well
     /// TODO: optimization?
     _screen
       ..resetBackground()
       ..updateScreen()
       ..resize(size);
     listener.screenResize(size);
-  }
-
-  void _stdinEvent(List<int> input) {
-    if (!_tryToInterpretControlCharacter(input)) {
-      listener.input(String.fromCharCodes(input));
-    }
   }
 
   @override

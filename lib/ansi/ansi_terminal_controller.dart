@@ -11,6 +11,10 @@ class AnsiTerminalController {
     stdout.write(ansi_codes.cursorTo(x, y));
   }
 
+  void queryCursorPosition() {
+    stdout.write(ansi_codes.cursorPositionQuery);
+  }
+
   void changeCursorVisibility({required bool hiding}) {
     if (hiding) {
       stdout.write(ansi_codes.hideCursor);

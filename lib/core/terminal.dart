@@ -17,6 +17,7 @@ abstract class TerminalWindowFactory {
 enum AllowedSignal { sighup, sigint, sigterm, sigusr1, sigusr2 }
 
 enum ControlCharacter {
+  ctrlSpace, // NULL
   ctrlA,
   ctrlB,
   ctrlC, // Break
@@ -59,6 +60,7 @@ enum ControlCharacter {
   delete,
   wordBackspace,
 
+  // TODO: interpret these correctly (until F12)
   // ignore: constant_identifier_names
   F1,
   // ignore: constant_identifier_names
