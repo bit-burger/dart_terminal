@@ -15,10 +15,8 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   final TerminalController _controller;
   final TerminalCapabilitiesDetector _capabilitiesDetector;
   final TerminalSizeTracker _sizeTracker;
-  final TerminalListener? listener;
 
   AnsiTerminalWindowFactory({
-    required this.listener,
     required TerminalController controller,
     required TerminalCapabilitiesDetector capabilitiesDetector,
     required TerminalSizeTracker sizeTracker,
@@ -28,7 +26,6 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
 
   factory AnsiTerminalWindowFactory.agnostic({
     Duration? terminalSizePollingInterval,
-    TerminalListener? listener,
   }) {
     final controller = AnsiTerminalController();
     final capabilitiesDetector = TerminalCapabilitiesDetector.agnostic();
@@ -40,16 +37,17 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
       controller: controller,
       capabilitiesDetector: capabilitiesDetector,
       sizeTracker: sizeTracker,
-      listener: listener,
     );
   }
 
   @override
-  AnsiTerminalWindow createWindow() => AnsiTerminalWindow(
+  AnsiTerminalWindow createWindow({
+    TerminalListener listener = const TerminalListener.empty(),
+  }) => AnsiTerminalWindow(
     controller: _controller,
     capabilitiesDetector: _capabilitiesDetector,
     sizeTracker: _sizeTracker,
-    listener: listener ?? DefaultTerminalListener(),
+    listener: listener,
   );
 
   @override
@@ -114,12 +112,11 @@ class AnsiTerminalWindow extends TerminalWindow
   }) : super(listener: listener);
 
   factory AnsiTerminalWindow.agnostic({
-    TerminalListener? listener,
+    TerminalListener listener = const TerminalListener.empty(),
     Duration? terminalSizePollingInterval,
   }) => AnsiTerminalWindowFactory.agnostic(
     terminalSizePollingInterval: terminalSizePollingInterval,
-    listener: listener,
-  ).createWindow();
+  ).createWindow(listener: listener);
 
   Future<Position> _getCursorPosition() {
     io.stdout.write(ansi_codes.cursorPositionQuery);

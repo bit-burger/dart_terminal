@@ -5,7 +5,7 @@ import 'package:dart_tui/core/style.dart';
 import 'graphics.dart';
 
 abstract class TerminalWindowFactory {
-  TerminalWindow createWindow();
+  TerminalWindow createWindow({TerminalListener listener});
 
   TerminalImage createImage({
     required Size size,
@@ -133,7 +133,7 @@ abstract interface class TerminalListener {
 
   void focusChange(bool isFocused);
 
-  factory TerminalListener.delegate({
+  const factory TerminalListener.delegate({
     void Function(ControlCharacter) controlCharacter,
     void Function(bool) focusChange,
     void Function(String) input,
@@ -141,6 +141,8 @@ abstract interface class TerminalListener {
     void Function(Size) screenResize,
     void Function(AllowedSignal) signal,
   }) = _LambdaTerminalListener;
+
+  const factory TerminalListener.empty() = DefaultTerminalListener;
 }
 
 class _LambdaTerminalListener implements TerminalListener {

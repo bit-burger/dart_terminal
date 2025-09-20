@@ -1,5 +1,4 @@
 import 'dart:io' show stdout;
-import 'dart:math';
 
 import 'package:dart_tui/ansi/native_terminal_image.dart';
 import 'package:dart_tui/core/style.dart';
