@@ -23,7 +23,7 @@ class _TerminalCell {
   void draw(TerminalForeground? fg, TerminalColor? bg) {
     assert(fg != null || bg != null);
 
-    if(fg != null) {
+    if (fg != null) {
       newFg = fg;
     }
     if (bg != null) {
@@ -33,14 +33,14 @@ class _TerminalCell {
   }
 
   bool calculateDifference() {
-    if(newFg != null) {
+    if (newFg != null) {
       fg = newFg!;
-      if(newBg != null) {
+      if (newBg != null) {
         bg = newBg!;
       }
       return true;
     }
-    if(newBg != null) {
+    if (newBg != null) {
       bg = newBg!;
       return true;
     }
@@ -124,6 +124,12 @@ class AnsiTerminalScreen {
       );
       _dataSize = Size(_dataSize.width, size.height);
     }
+    assert(
+      _dataSize.height == _screenBuffer.length &&
+          _screenBuffer
+              .map((r) => r.length == _dataSize.width)
+              .reduce((a, b) => a && b),
+    );
     _size = size;
   }
 
