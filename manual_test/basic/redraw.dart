@@ -25,13 +25,12 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
           for (int j = -10; j <= 10; j++) {
             window.drawPoint(
               position: Position(pos.x + i, pos.y + j),
-              background: i != 0 || j != 0
-                  ? BasicTerminalColor.green
-                  : BrightTerminalColor.green,
               foreground: TerminalForeground(
                 style: TerminalForegroundStyle(
                   textDecorations: TextDecorationSet.underline,
-                  color: BasicTerminalColor.yellow,
+                  color: i != 0 || j != 0
+                  ? BasicTerminalColor.green
+                  : BrightTerminalColor.yellow,
                 ),
                 codePoint: (codePoint % 26) + 65,
               ),

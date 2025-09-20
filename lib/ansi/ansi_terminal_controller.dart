@@ -6,7 +6,6 @@ import 'ansi_escape_codes.dart' as ansi_codes;
 abstract class TerminalController {
   const TerminalController();
 
-  void clearScreen();
   void changeCursorVisibility({required bool hiding});
   void changeSize(int width, int height);
   void changeTerminalTitle(String title);
@@ -117,7 +116,4 @@ class AnsiTerminalController extends TerminalController {
       stdout.write(ansi_codes.disableLineWrapping);
     }
   }
-
-  @override
-  void clearScreen() => stdout.write(ansi_codes.eraseEntireScreen);
 }

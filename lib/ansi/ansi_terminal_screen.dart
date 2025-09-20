@@ -1,5 +1,7 @@
 import 'dart:io' show stdout;
+import 'dart:math';
 
+import 'package:dart_tui/ansi/native_terminal_image.dart';
 import 'package:dart_tui/core/style.dart';
 import 'package:dart_tui/core/terminal.dart';
 
@@ -57,9 +59,9 @@ class _TerminalCell {
     return false;
   }
 
-  void reset() {
+  void reset(TerminalColor background) {
     fg = TerminalForeground();
-    bg = DefaultTerminalColor();
+    bg = background;
     newFg = newBg = null;
     changed = false;
   }
@@ -99,6 +101,7 @@ List<_TerminalCell> _rowGen(int length) =>
 class AnsiTerminalScreen {
   final List<List<_TerminalCell>> _screenBuffer;
   final List<bool> _changeList;
+  TerminalColor? _backgroundReset;
 
   AnsiTerminalScreen(Size size)
     : _size = size,
@@ -136,11 +139,12 @@ class AnsiTerminalScreen {
     _size = size;
   }
 
-  void reset() {
+  void resetBackground([TerminalColor color = const DefaultTerminalColor()]) {
+    _backgroundReset = color;
     for (int j = 0; j < size.height; j++) {
       _changeList[j] = false;
       for (int i = 0; i < size.width; i++) {
-        _screenBuffer[j][i].reset();
+        _screenBuffer[j][i].reset(color);
       }
     }
   }
@@ -240,14 +244,39 @@ class AnsiTerminalScreen {
     }
   }
 
+  void drawImage(Position position, NativeTerminalImage image) {
+    final clip = (Position.zero & size).clip(position & image.size);
+    for (int y = clip.y1; y <= clip.y2; y++) {
+      _changeList[y] = true;
+      for (int x = clip.x1; x <= clip.x2; x++) {
+        final color = image[Position(x - position.x, y - position.y)];
+        if (color != null) _screenBuffer[y][x].draw(null, color);
+      }
+    }
+  }
+
   final StringBuffer _redrawBuff = StringBuffer();
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 
   // more optimizations possible (only write x coordinate)
-  void drawChanges() {
+  void updateScreen() {
     _redrawBuff.clear();
-    _redrawBuff.write(ansi_codes.resetAllFormats);
+    if (_backgroundReset != null) {
+      if (_backgroundReset == const DefaultTerminalColor()) {
+        _redrawBuff.write(ansi_codes.resetAllFormats);
+        _redrawBuff.write(ansi_codes.eraseEntireScreen);
+      } else {
+        _redrawBuff.write(
+          "${ansi_codes.CSI}${_backgroundReset!.termRepBackground}m",
+        );
+        _redrawBuff.write(ansi_codes.eraseEntireScreen);
+        _redrawBuff.write(ansi_codes.resetAllFormats);
+      }
+      _backgroundReset = null;
+    } else {
+      _redrawBuff.write(ansi_codes.resetAllFormats);
+    }
     currentFg = TerminalForegroundStyle();
     currentBg = DefaultTerminalColor();
     for (int j = 0; j < size.height; j++) {

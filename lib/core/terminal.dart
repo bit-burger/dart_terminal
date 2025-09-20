@@ -2,8 +2,16 @@ import 'dart:math' show min, max;
 
 import 'package:dart_tui/core/style.dart';
 
+import 'graphics.dart';
+
 abstract class TerminalWindowFactory {
   TerminalWindow createWindow();
+
+  TerminalImage createImage({
+    required Size size,
+    String? filePath,
+    TerminalColor? backgroundColor,
+  });
 }
 
 enum AllowedSignal { sighup, sigint, sigterm, sigusr1, sigusr2 }
@@ -277,7 +285,7 @@ abstract class TerminalWindow implements TerminalCanvas {
   void setTerminalSize(Size size);
   void setTerminalTitle(String title);
   void bell();
-  void clearScreen();
+  void drawBackground({TerminalColor color});
   void updateScreen();
 }
 
@@ -287,6 +295,15 @@ extension type const Size._(({int width, int height}) _) {
   int get height => _.height;
 }
 
+extension type const Offset._(({int dx, int dy}) _) {
+  const Offset(int dx, int dy) : this._((dx: dx, dy: dy));
+
+  static const Offset zero = Offset(0, 0);
+
+  int get dx => _.dx;
+  int get dy => _.dy;
+}
+
 extension type const Position._(({int x, int y}) _) {
   const Position(int x, int y) : this._((x: x, y: y));
 
@@ -294,6 +311,8 @@ extension type const Position._(({int x, int y}) _) {
 
   Rect operator &(Size size) =>
       Rect(x, x + size.width - 1, y, y + size.height - 1);
+
+  Position operator +(Offset v) => Position(x + v.dx, y + v.dy);
 
   int get x => _.x;
   int get y => _.y;
@@ -368,10 +387,6 @@ extension type const BorderDrawIdentifier._(int id) {
 abstract class TerminalCanvas {
   Size get size;
 
-  static int _currentBorderDrawId = 0;
-
-  static int getUniqueBorderDrawId() => _currentBorderDrawId++;
-
   void drawText({
     required String text,
     required Position position,
@@ -403,5 +418,10 @@ abstract class TerminalCanvas {
     required BorderCharSet borderStyle,
     TerminalColor foregroundColor,
     BorderDrawIdentifier drawIdentifier,
+  });
+
+  void drawImage({
+    required Position position,
+    required covariant TerminalImage image,
   });
 }

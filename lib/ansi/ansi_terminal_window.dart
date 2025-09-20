@@ -9,19 +9,21 @@ import '../core/style.dart';
 import '../core/terminal.dart';
 import 'ansi_escape_codes.dart' as ansi_codes;
 import 'ansi_terminal_controller.dart';
+import 'native_terminal_image.dart';
 
 class AnsiTerminalWindowFactory extends TerminalWindowFactory {
-  final TerminalController controller;
+  final TerminalController _controller;
   final TerminalCapabilitiesDetector _capabilitiesDetector;
   final TerminalSizeTracker _sizeTracker;
   final TerminalListener? listener;
 
   AnsiTerminalWindowFactory({
     required this.listener,
-    required this.controller,
+    required TerminalController controller,
     required TerminalCapabilitiesDetector capabilitiesDetector,
     required TerminalSizeTracker sizeTracker,
-  }) : _sizeTracker = sizeTracker,
+  }) : _controller = controller,
+       _sizeTracker = sizeTracker,
        _capabilitiesDetector = capabilitiesDetector;
 
   factory AnsiTerminalWindowFactory.agnostic({
@@ -44,11 +46,27 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
 
   @override
   AnsiTerminalWindow createWindow() => AnsiTerminalWindow(
-    controller: controller,
+    controller: _controller,
     capabilitiesDetector: _capabilitiesDetector,
     sizeTracker: _sizeTracker,
     listener: listener ?? DefaultTerminalListener(),
   );
+
+  @override
+  NativeTerminalImage createImage({
+    required Size size,
+    String? filePath,
+    TerminalColor? backgroundColor,
+  }) {
+    if (filePath != null) {
+      return NativeTerminalImage.fromPath(
+        size: size,
+        path: filePath,
+        backgroundColor: backgroundColor,
+      );
+    }
+    return NativeTerminalImage.filled(size, backgroundColor);
+  }
 }
 
 extension on AllowedSignal {
@@ -73,7 +91,7 @@ class AnsiTerminalWindow extends TerminalWindow
   final TerminalController controller;
   final TerminalCapabilitiesDetector capabilitiesDetector;
   final TerminalSizeTracker sizeTracker;
-  late final AnsiTerminalScreen screen;
+  late final AnsiTerminalScreen _screen;
 
   late final Set<TerminalCapability> _capabilities;
 
@@ -115,7 +133,6 @@ class AnsiTerminalWindow extends TerminalWindow
     controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
-      ..clearScreen()
       ..changeFocusTrackingMode(enable: true)
       ..changeMouseTrackingMode(enable: true)
       ..changeLineWrappingMode(enable: false);
@@ -132,7 +149,9 @@ class AnsiTerminalWindow extends TerminalWindow
       ..addListener(this);
     controller.setInputMode(true);
     _cursorPosition = await _getCursorPosition();
-    screen = AnsiTerminalScreen(size);
+    _screen = AnsiTerminalScreen(size)
+      ..resetBackground()
+      ..updateScreen();
   }
 
   @override
@@ -143,9 +162,11 @@ class AnsiTerminalWindow extends TerminalWindow
     }
     sizeTracker.stopTracking();
     sizeTracker.removeListener(this);
+    _screen
+      ..resetBackground()
+      ..updateScreen();
     controller
       ..setInputMode(false)
-      ..clearScreen() // necessary?
       ..changeScreenMode(alternateBuffer: false)
       ..restoreCursorPosition()
       ..changeFocusTrackingMode(enable: false)
@@ -274,9 +295,11 @@ class AnsiTerminalWindow extends TerminalWindow
 
   @override
   void resizeEvent() {
-    screen.reset();
-    screen.resize(size);
-    controller.clearScreen();
+    /// TODO: optimization?
+    _screen
+      ..resetBackground()
+      ..updateScreen()
+      ..resize(size);
     listener.screenResize(size);
   }
 
@@ -313,21 +336,21 @@ class AnsiTerminalWindow extends TerminalWindow
     required Position position,
     TerminalColor? background,
     TerminalForeground? foreground,
-  }) => screen.drawPoint(position, background, foreground);
+  }) => _screen.drawPoint(position, background, foreground);
 
   @override
   void drawRect({
     required Rect rect,
     TerminalColor? background,
     TerminalForeground? foreground,
-  }) => screen.drawRect(rect, background, foreground);
+  }) => _screen.drawRect(rect, background, foreground);
 
   @override
   void drawText({
     required String text,
     required Position position,
     TerminalForegroundStyle? style,
-  }) => screen.drawText(text, style, position);
+  }) => _screen.drawText(text, style, position);
 
   @override
   void drawBorderBox({
@@ -338,7 +361,7 @@ class AnsiTerminalWindow extends TerminalWindow
   }) {
     drawIdentifier ??= BorderDrawIdentifier();
     assert(rect.height > 1 && rect.width > 1, "Rect needs to be at least 2x2.");
-    screen.drawBorderBox(rect, borderStyle, foregroundColor, drawIdentifier);
+    _screen.drawBorderBox(rect, borderStyle, foregroundColor, drawIdentifier);
   }
 
   @override
@@ -355,7 +378,7 @@ class AnsiTerminalWindow extends TerminalWindow
       "Points need to be either horizontally or vertically aligned.",
     );
     assert(from != to, "Points need to be different.");
-    screen.drawBorderLine(
+    _screen.drawBorderLine(
       from,
       to,
       borderStyle,
@@ -365,15 +388,26 @@ class AnsiTerminalWindow extends TerminalWindow
   }
 
   @override
-  // TODO: should use color (and add to super class)
-  void clearScreen([TerminalColor? color]) {
-    screen.reset();
-    controller.clearScreen();
+  void drawImage({
+    required Position position,
+    required NativeTerminalImage image,
+  }) => _screen.drawImage(position, image);
+
+  @override
+  void drawBackground({
+    TerminalColor color = const DefaultTerminalColor(),
+    bool optimize = true,
+  }) {
+    if (optimize) {
+      _screen.resetBackground(color);
+    } else {
+      _screen.drawRect(Position.zero & size, color, null);
+    }
   }
 
   @override
   void updateScreen() {
-    screen.drawChanges();
+    _screen.updateScreen();
     if (cursorPosition != null) {
       controller.setCursorPosition(
         cursorPosition!.x + 1,
