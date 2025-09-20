@@ -52,128 +52,6 @@ sealed class AnsiTerminalInputProcessor {
       _SimpleAnsiTerminalInputProcessor();
 }
 
-final class _SimpleAnsiTerminalInputProcessor
-    extends AnsiTerminalInputProcessor {
-  @override
-  void _onBytes(List<int> input) {
-    if (!_tryToInterpretControlCharacter(input)) {
-      listener?.call(String.fromCharCodes(input));
-    }
-  }
-
-  bool _tryToInterpretControlCharacter(List<int> input) {
-    if (input[0] <= 0x1a) {
-      // Ctrl+A thru Ctrl+Z are mapped to the 1st-26th entries in the
-      // enum, so it's easy to convert them across
-      listener?.call(ControlCharacter.values[input[0]]);
-      return true;
-    }
-    if (input[0] == 127) {
-      listener?.call(ControlCharacter.delete);
-      return true;
-    }
-    if (input[0] == 27 && input.length == 1) {
-      listener?.call(ControlCharacter.escape);
-      return true;
-    }
-    // reads for CSI (can be ESC[ or just CSI)
-    if (input[0] == 27 && input[1] == 91) {
-      input = input.sublist(2);
-    } else if (input[0] == 0x9b) {
-      input = input.sublist(1);
-    } else {
-      return false;
-    }
-    // focus
-    if (input.first == 73 || input.first == 79) {
-      assert(input.length == 1);
-      listener?.call(input.first == 73);
-      return true;
-    }
-    // mouse reporting https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-    if (input.first == 60) {
-      if (input.last != 77 && input.last != 109) return true;
-      final isPrimaryAction =
-          input.last == 77; // secondary action is release for example
-      input = input.sublist(1, input.length - 1);
-      final args = String.fromCharCodes(
-        input,
-      ).split(";").map(int.tryParse).toList(growable: false);
-      if (args.length != 3 || args.any((arg) => arg == null)) return true;
-      final btnState = args[0]!, pos = Position(args[1]! - 1, args[2]! - 1);
-      final lowButton = btnState & 3;
-      final shift = btnState & 4 != 0,
-          meta = btnState & 8 != 0,
-          ctrl = btnState & 16 != 0;
-      final isMotion = btnState & 32 != 0, isScroll = btnState & 64 != 0;
-      final usingExtraButton = btnState & 128 != 0; // for button 8-11
-      if (isMotion) {
-        assert(lowButton == 3);
-        assert(isPrimaryAction);
-        listener?.call(MouseHoverMotionEvent(shift, meta, ctrl, pos));
-      } else if (isScroll) {
-        assert(isPrimaryAction);
-        final (xScroll, yScroll) = switch (lowButton) {
-          0 => (0, -1),
-          1 => (0, 1),
-          2 => (1, 0),
-          3 => (-1, 0),
-          _ => throw StateError(""),
-        };
-        listener?.call(MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll));
-      } else {
-        final btn = switch ((usingExtraButton, lowButton)) {
-          (false, 0) => MouseButton.left,
-          (false, 1) => MouseButton.middle,
-          (false, 2) => MouseButton.right,
-          (true, 0) => MouseButton.button8,
-          (true, 1) => MouseButton.button9,
-          (true, 2) => MouseButton.button10,
-          (true, 3) => MouseButton.button11,
-          _ => throw StateError("Release button cannot be pressed"),
-        };
-        final type = isPrimaryAction
-            ? MouseButtonPressEventType.press
-            : MouseButtonPressEventType.release;
-        listener?.call(MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type));
-      }
-      return true;
-    }
-    // cursor position
-    if (input.last == 82) {
-      int semicolonIndex = input.indexOf(59);
-      if (semicolonIndex == -1) return true;
-      final x = int.tryParse(
-        String.fromCharCodes(input.sublist(0, semicolonIndex)),
-      );
-      final y = int.tryParse(
-        String.fromCharCodes(
-          input.sublist(semicolonIndex + 1, input.length - 1),
-        ),
-      );
-      if (x == null || y == null) return true;
-      listener?.call(CursorPositionEvent(Position(x - 1, y - 1)));
-      return true;
-    }
-    // other control characters
-    switch (input[0]) {
-      case 65:
-        listener?.call(ControlCharacter.arrowUp);
-      case 66:
-        listener?.call(ControlCharacter.arrowDown);
-      case 67:
-        listener?.call(ControlCharacter.arrowRight);
-      case 68:
-        listener?.call(ControlCharacter.arrowLeft);
-      case 72:
-        listener?.call(ControlCharacter.home);
-      case 70:
-        listener?.call(ControlCharacter.end);
-    }
-    return true;
-  }
-}
-
 final class _WaitingAnsiTerminalInputProcessor
     extends AnsiTerminalInputProcessor {
   _TerminalInputState _state = _T.none;
@@ -351,8 +229,9 @@ final class _WaitingAnsiTerminalInputProcessor
         ctrl = btnState & 16 != 0;
     final isMotion = btnState & 32 != 0, isScroll = btnState & 64 != 0;
     final usingExtraButton = btnState & 128 != 0; // for button 8-11
-    if (isMotion) {
-      if (lowButton != 3) return null;
+    // technically information is getting lost here,
+    // as the press events don't have a motion indicator
+    if (isMotion && lowButton == 3 && !usingExtraButton) {
       if (!isPrimaryAction) return null;
       return MouseHoverMotionEvent(shift, meta, ctrl, pos);
     } else if (isScroll) {
@@ -381,5 +260,131 @@ final class _WaitingAnsiTerminalInputProcessor
           : MouseButtonPressEventType.release;
       return MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type);
     }
+  }
+}
+
+final class _SimpleAnsiTerminalInputProcessor
+    extends AnsiTerminalInputProcessor {
+  @override
+  void _onBytes(List<int> input) {
+    if (!_tryToInterpretControlCharacter(input)) {
+      listener?.call(String.fromCharCodes(input));
+    }
+  }
+
+  bool _tryToInterpretControlCharacter(List<int> input) {
+    if (input[0] <= 0x1a) {
+      // Ctrl+A thru Ctrl+Z are mapped to the 1st-26th entries in the
+      // enum, so it's easy to convert them across
+      listener?.call(ControlCharacter.values[input[0]]);
+      return true;
+    }
+    if (input[0] == 127) {
+      listener?.call(ControlCharacter.delete);
+      return true;
+    }
+    if (input[0] == 27 && input.length == 1) {
+      listener?.call(ControlCharacter.escape);
+      return true;
+    }
+    // reads for CSI (can be ESC[ or just CSI)
+    if (input[0] == 27 && input[1] == 91) {
+      input = input.sublist(2);
+    } else if (input[0] == 0x9b) {
+      input = input.sublist(1);
+    } else {
+      return false;
+    }
+    // focus
+    if (input.first == 73 || input.first == 79) {
+      assert(input.length == 1);
+      listener?.call(input.first == 73);
+      return true;
+    }
+    // mouse reporting https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+    if (input.first == 60) {
+      if (input.last != 77 && input.last != 109) return true;
+      final isPrimaryAction =
+          input.last == 77; // secondary action is release for example
+      input = input.sublist(1, input.length - 1);
+      final args = String.fromCharCodes(
+        input,
+      ).split(";").map(int.tryParse).toList(growable: false);
+      if (args.length != 3 || args.any((arg) => arg == null)) return true;
+      final btnState = args[0]!, pos = Position(args[1]! - 1, args[2]! - 1);
+      final lowButton = btnState & 3;
+      final shift = btnState & 4 != 0,
+          meta = btnState & 8 != 0,
+          ctrl = btnState & 16 != 0;
+      final isMotion = btnState & 32 != 0, isScroll = btnState & 64 != 0;
+      final usingExtraButton = btnState & 128 != 0; // for button 8-11
+      if (isMotion) {
+        assert(lowButton == 3);
+        assert(isPrimaryAction);
+        listener?.call(MouseHoverMotionEvent(shift, meta, ctrl, pos));
+      } else if (isScroll) {
+        assert(isPrimaryAction);
+        final (xScroll, yScroll) = switch (lowButton) {
+          0 => (0, -1),
+          1 => (0, 1),
+          2 => (1, 0),
+          3 => (-1, 0),
+          _ => throw StateError(""),
+        };
+        listener?.call(
+          MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll),
+        );
+      } else {
+        final btn = switch ((usingExtraButton, lowButton)) {
+          (false, 0) => MouseButton.left,
+          (false, 1) => MouseButton.middle,
+          (false, 2) => MouseButton.right,
+          (true, 0) => MouseButton.button8,
+          (true, 1) => MouseButton.button9,
+          (true, 2) => MouseButton.button10,
+          (true, 3) => MouseButton.button11,
+          _ => throw StateError("Release button cannot be pressed"),
+        };
+        final type = isPrimaryAction
+            ? MouseButtonPressEventType.press
+            : MouseButtonPressEventType.release;
+        listener?.call(
+          MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type),
+        );
+      }
+      return true;
+    }
+    // cursor position
+    if (input.last == 82) {
+      int semicolonIndex = input.indexOf(59);
+      if (semicolonIndex == -1) return true;
+      final x = int.tryParse(
+        String.fromCharCodes(input.sublist(0, semicolonIndex)),
+      );
+      final y = int.tryParse(
+        String.fromCharCodes(
+          input.sublist(semicolonIndex + 1, input.length - 1),
+        ),
+      );
+      if (x == null || y == null) return true;
+      listener?.call(CursorPositionEvent(Position(x - 1, y - 1)));
+      return true;
+    }
+    // other control characters
+    switch (input[0]) {
+      case 65:
+        listener?.call(ControlCharacter.arrowUp);
+      case 66:
+        listener?.call(ControlCharacter.arrowDown);
+      case 67:
+        listener?.call(ControlCharacter.arrowRight);
+      case 68:
+        listener?.call(ControlCharacter.arrowLeft);
+      case 72:
+        listener?.call(ControlCharacter.home);
+      case 70:
+        listener?.call(ControlCharacter.end);
+    }
+    return true;
   }
 }
