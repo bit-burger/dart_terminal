@@ -78,8 +78,7 @@ extension on AllowedSignal {
   }
 }
 
-class AnsiTerminalWindow extends TerminalWindow
-    implements TerminalSizeListener {
+class AnsiTerminalWindow extends TerminalWindow {
   final TerminalCapabilitiesDetector capabilitiesDetector;
   final TerminalSizeTracker sizeTracker;
   final AnsiTerminalController controller = AnsiTerminalController();
@@ -128,8 +127,9 @@ class AnsiTerminalWindow extends TerminalWindow
       ..changeFocusTrackingMode(enable: true)
       ..changeMouseTrackingMode(enable: true)
       ..changeLineWrappingMode(enable: false);
-    inputProcessor.startListening();
-    _subscriptions.add(inputProcessor.stream.listen(_onInputEvent));
+    inputProcessor
+      ..startListening()
+      ..listener = _onInputEvent;
     for (final signal in AllowedSignal.values) {
       _subscriptions.add(
         signal.processSignal().watch().listen((_) {
@@ -139,7 +139,7 @@ class AnsiTerminalWindow extends TerminalWindow
     }
     sizeTracker
       ..startTracking()
-      ..addListener(this);
+      ..listener = _onResizeEvent;
     controller.setInputMode(true);
     _cursorPosition = await _getCursorPosition();
     _screen = AnsiTerminalScreen(size)
@@ -155,7 +155,6 @@ class AnsiTerminalWindow extends TerminalWindow
     }
     inputProcessor.stopListening();
     sizeTracker.stopTracking();
-    sizeTracker.removeListener(this);
     _screen
       ..resetBackground()
       ..updateScreen();
@@ -184,9 +183,7 @@ class AnsiTerminalWindow extends TerminalWindow
     }
   }
 
-  @override
-  void resizeEvent() {
-    /// TODO: maybe do this with stream as well
+  void _onResizeEvent() {
     /// TODO: optimization?
     _screen
       ..resetBackground()

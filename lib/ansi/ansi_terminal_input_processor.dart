@@ -26,17 +26,16 @@ class CursorPositionEvent {
 }
 
 sealed class AnsiTerminalInputProcessor {
-  late final StreamSubscription<List<int>> _ioSubscription;
-
-  final StreamController<Object> _output = StreamController(sync: true);
-
-  /// Stream of terminal input, with possible types
   /// [FocusEvent] for focusing events for the terminal window
   /// [String] for normal input (can be multiple long on copy paste)
   /// [CursorPositionEvent] for the cursor position (only after request)
   /// [MouseEvent] for mouse events
   /// [ControlCharacter] for various control characters (not complete)
-  Stream<Object> get stream => _output.stream;
+  void Function(Object)? listener;
+
+  late final StreamSubscription<List<int>> _ioSubscription;
+
+  AnsiTerminalInputProcessor();
 
   FutureOr<void> startListening() {
     _ioSubscription = io.stdin.listen(_onBytes);
@@ -45,8 +44,6 @@ sealed class AnsiTerminalInputProcessor {
   void _onBytes(List<int> bytes);
 
   FutureOr<void> stopListening() => _ioSubscription.cancel();
-
-  AnsiTerminalInputProcessor();
 
   factory AnsiTerminalInputProcessor.waiting() =>
       _WaitingAnsiTerminalInputProcessor();
@@ -60,7 +57,7 @@ final class _SimpleAnsiTerminalInputProcessor
   @override
   void _onBytes(List<int> input) {
     if (!_tryToInterpretControlCharacter(input)) {
-      _output.add(String.fromCharCodes(input));
+      listener?.call(String.fromCharCodes(input));
     }
   }
 
@@ -68,15 +65,15 @@ final class _SimpleAnsiTerminalInputProcessor
     if (input[0] <= 0x1a) {
       // Ctrl+A thru Ctrl+Z are mapped to the 1st-26th entries in the
       // enum, so it's easy to convert them across
-      _output.add(ControlCharacter.values[input[0]]);
+      listener?.call(ControlCharacter.values[input[0]]);
       return true;
     }
     if (input[0] == 127) {
-      _output.add(ControlCharacter.delete);
+      listener?.call(ControlCharacter.delete);
       return true;
     }
     if (input[0] == 27 && input.length == 1) {
-      _output.add(ControlCharacter.escape);
+      listener?.call(ControlCharacter.escape);
       return true;
     }
     // reads for CSI (can be ESC[ or just CSI)
@@ -90,7 +87,7 @@ final class _SimpleAnsiTerminalInputProcessor
     // focus
     if (input.first == 73 || input.first == 79) {
       assert(input.length == 1);
-      _output.add(input.first == 73);
+      listener?.call(input.first == 73);
       return true;
     }
     // mouse reporting https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
@@ -113,7 +110,7 @@ final class _SimpleAnsiTerminalInputProcessor
       if (isMotion) {
         assert(lowButton == 3);
         assert(isPrimaryAction);
-        _output.add(MouseHoverMotionEvent(shift, meta, ctrl, pos));
+        listener?.call(MouseHoverMotionEvent(shift, meta, ctrl, pos));
       } else if (isScroll) {
         assert(isPrimaryAction);
         final (xScroll, yScroll) = switch (lowButton) {
@@ -123,7 +120,7 @@ final class _SimpleAnsiTerminalInputProcessor
           3 => (-1, 0),
           _ => throw StateError(""),
         };
-        _output.add(MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll));
+        listener?.call(MouseScrollEvent(shift, meta, ctrl, pos, xScroll, yScroll));
       } else {
         final btn = switch ((usingExtraButton, lowButton)) {
           (false, 0) => MouseButton.left,
@@ -138,7 +135,7 @@ final class _SimpleAnsiTerminalInputProcessor
         final type = isPrimaryAction
             ? MouseButtonPressEventType.press
             : MouseButtonPressEventType.release;
-        _output.add(MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type));
+        listener?.call(MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type));
       }
       return true;
     }
@@ -155,23 +152,23 @@ final class _SimpleAnsiTerminalInputProcessor
         ),
       );
       if (x == null || y == null) return true;
-      _output.add(CursorPositionEvent(Position(x - 1, y - 1)));
+      listener?.call(CursorPositionEvent(Position(x - 1, y - 1)));
       return true;
     }
     // other control characters
     switch (input[0]) {
       case 65:
-        _output.add(ControlCharacter.arrowUp);
+        listener?.call(ControlCharacter.arrowUp);
       case 66:
-        _output.add(ControlCharacter.arrowDown);
+        listener?.call(ControlCharacter.arrowDown);
       case 67:
-        _output.add(ControlCharacter.arrowRight);
+        listener?.call(ControlCharacter.arrowRight);
       case 68:
-        _output.add(ControlCharacter.arrowLeft);
+        listener?.call(ControlCharacter.arrowLeft);
       case 72:
-        _output.add(ControlCharacter.home);
+        listener?.call(ControlCharacter.home);
       case 70:
-        _output.add(ControlCharacter.end);
+        listener?.call(ControlCharacter.end);
     }
     return true;
   }
@@ -236,7 +233,7 @@ final class _WaitingAnsiTerminalInputProcessor
       string:
       case _T.string:
         if (byte <= 27 || byte == 127 || byte == 155) {
-          _output.add(String.fromCharCodes(_stringBytes));
+          listener?.call(String.fromCharCodes(_stringBytes));
           _state = _T.none;
           continue none;
         } else {
@@ -246,9 +243,9 @@ final class _WaitingAnsiTerminalInputProcessor
       case _T.none:
         if (byte <= 26) {
           // first 27 ascii bytes match the first 27 values of ControlCharacter
-          _output.add(ControlCharacter.values[byte]);
+          listener?.call(ControlCharacter.values[byte]);
         } else if (byte == 127) {
-          _output.add(ControlCharacter.delete);
+          listener?.call(ControlCharacter.delete);
         } else if (byte == 27) {
           _isEsc();
         } else if (byte == 155) {
@@ -261,7 +258,7 @@ final class _WaitingAnsiTerminalInputProcessor
         if (byte == 91) {
           _isCsi(true);
         } else {
-          _output.add(ControlCharacter.escape);
+          listener?.call(ControlCharacter.escape);
           _isString([byte]);
         }
       case _TerminalInputState.csi:
@@ -294,7 +291,7 @@ final class _WaitingAnsiTerminalInputProcessor
           }
         } else {
           if (_isRealCsi) {
-            _output.add(ControlCharacter.escape);
+            listener?.call(ControlCharacter.escape);
           }
           _isString(_allCsiBytesAfterEsc);
           continue string;
@@ -305,7 +302,7 @@ final class _WaitingAnsiTerminalInputProcessor
 
   void _processEndOfInputBuffer() {
     if (_state == _T.string) {
-      _output.add(String.fromCharCodes(_stringBytes));
+      listener?.call(String.fromCharCodes(_stringBytes));
       _state = _T.none;
     }
   }
@@ -313,9 +310,9 @@ final class _WaitingAnsiTerminalInputProcessor
   void _processInputWaitTimeout() {
     if (_state == _T.esc || _state == _T.csi) {
       if (_state == _T.esc || _isRealCsi) {
-        _output.add(ControlCharacter.escape);
+        listener?.call(ControlCharacter.escape);
       }
-      _output.add(String.fromCharCodes(_allCsiBytesAfterEsc));
+      listener?.call(String.fromCharCodes(_allCsiBytesAfterEsc));
       _state = _T.none;
     }
   }
@@ -340,7 +337,7 @@ final class _WaitingAnsiTerminalInputProcessor
       _ => null,
     };
     if (event != null) {
-      _output.add(event);
+      listener?.call(event);
       return true;
     }
     return false;

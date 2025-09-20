@@ -5,8 +5,9 @@ import 'package:dart_tui/core/terminal.dart';
 
 abstract interface class TerminalSizeTracker {
   Size get currentSize;
-  void addListener(TerminalSizeListener listener);
-  void removeListener(TerminalSizeListener listener);
+
+  void Function()? listener;
+
   void startTracking();
   void stopTracking();
 
@@ -18,26 +19,14 @@ abstract interface class TerminalSizeTracker {
       : PosixTerminalSizeTracker();
 }
 
-abstract class TerminalSizeListener {
-  void resizeEvent();
-}
-
 // ------------------------------
 // POSIX implementation
 // ------------------------------
 class PosixTerminalSizeTracker extends TerminalSizeTracker {
-  final List<TerminalSizeListener> _listeners = [];
   late Size _currentSize;
 
   @override
   Size get currentSize => _currentSize;
-
-  @override
-  void addListener(TerminalSizeListener listener) => _listeners.add(listener);
-
-  @override
-  void removeListener(TerminalSizeListener listener) =>
-      _listeners.remove(listener);
 
   StreamSubscription? _sigwinchSub;
 
@@ -53,9 +42,7 @@ class PosixTerminalSizeTracker extends TerminalSizeTracker {
     // Listen for SIGWINCH (terminal resize)
     _sigwinchSub = ProcessSignal.sigwinch.watch().listen((_) {
       _currentSize = Size(stdout.terminalColumns, stdout.terminalLines);
-      for (final l in _listeners) {
-        l.resizeEvent();
-      }
+      listener?.call();
     });
   }
 
@@ -70,7 +57,6 @@ class PosixTerminalSizeTracker extends TerminalSizeTracker {
 // Polling implementation
 // ------------------------------
 class PollingTerminalSizeTracker extends TerminalSizeTracker {
-  final List<TerminalSizeListener> _listeners = [];
   final Duration interval;
   Timer? _timer;
   late Size _currentSize;
@@ -83,13 +69,6 @@ class PollingTerminalSizeTracker extends TerminalSizeTracker {
   Size get currentSize => _currentSize;
 
   @override
-  void addListener(TerminalSizeListener listener) => _listeners.add(listener);
-
-  @override
-  void removeListener(TerminalSizeListener listener) =>
-      _listeners.remove(listener);
-
-  @override
   void startTracking() {
     _currentSize = Size(stdout.terminalColumns, stdout.terminalLines);
     _timer ??= Timer.periodic(interval, (_) {
@@ -97,9 +76,7 @@ class PollingTerminalSizeTracker extends TerminalSizeTracker {
       if (newSize.width != _currentSize.width ||
           newSize.height != _currentSize.height) {
         _currentSize = newSize;
-        for (final l in _listeners) {
-          l.resizeEvent();
-        }
+        listener?.call();
       }
     });
   }
