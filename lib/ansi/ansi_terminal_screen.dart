@@ -23,7 +23,9 @@ class _TerminalCell {
   void draw(TerminalForeground? fg, TerminalColor? bg) {
     assert(fg != null || bg != null);
 
-    newFg = fg;
+    if(fg != null) {
+      newFg = fg;
+    }
     if (bg != null) {
       newBg = bg;
     }
@@ -31,29 +33,16 @@ class _TerminalCell {
   }
 
   bool calculateDifference() {
-    if (newFg == null) {
-      // TODO: unnecessary check?
-      if (newFg == const TerminalForeground()) {
-        if (bg != newBg) {
-          bg = newBg!;
-          return true;
-        }
-      } else {
-        fg = const TerminalForeground();
+    if(newFg != null) {
+      fg = newFg!;
+      if(newBg != null) {
         bg = newBg!;
-        return true;
       }
-    } else {
-      if (fg == newFg) {
-        if (newBg != null && bg != newBg) {
-          bg = newBg!;
-          return true;
-        }
-      } else {
-        fg = newFg!;
-        if (newBg != null) bg = newBg!;
-        return true;
-      }
+      return true;
+    }
+    if(newBg != null) {
+      bg = newBg!;
+      return true;
     }
     return false;
   }
@@ -280,6 +269,7 @@ class AnsiTerminalScreen {
     currentBg = DefaultTerminalColor();
     for (int j = 0; j < size.height; j++) {
       if (!_changeList[j]) continue;
+      _changeList[j] = false;
       bool lastWritten = false;
       for (int i = 0; i < size.width; i++) {
         final cell = _screenBuffer[j][i];
