@@ -12,16 +12,13 @@ import 'ansi_terminal_controller.dart';
 import 'native_terminal_image.dart';
 
 class AnsiTerminalWindowFactory extends TerminalWindowFactory {
-  final TerminalController _controller;
   final TerminalCapabilitiesDetector _capabilitiesDetector;
   final TerminalSizeTracker _sizeTracker;
 
   AnsiTerminalWindowFactory({
-    required TerminalController controller,
     required TerminalCapabilitiesDetector capabilitiesDetector,
     required TerminalSizeTracker sizeTracker,
-  }) : _controller = controller,
-       _sizeTracker = sizeTracker,
+  }) : _sizeTracker = sizeTracker,
        _capabilitiesDetector = capabilitiesDetector;
 
   factory AnsiTerminalWindowFactory.agnostic({
@@ -34,7 +31,6 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
           terminalSizePollingInterval ?? Duration(milliseconds: 50),
     );
     return AnsiTerminalWindowFactory(
-      controller: controller,
       capabilitiesDetector: capabilitiesDetector,
       sizeTracker: sizeTracker,
     );
@@ -44,7 +40,6 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   AnsiTerminalWindow createWindow({
     TerminalListener listener = const TerminalListener.empty(),
   }) => AnsiTerminalWindow(
-    controller: _controller,
     capabilitiesDetector: _capabilitiesDetector,
     sizeTracker: _sizeTracker,
     listener: listener,
@@ -86,7 +81,7 @@ extension on AllowedSignal {
 
 class AnsiTerminalWindow extends TerminalWindow
     implements TerminalSizeListener {
-  final TerminalController controller;
+  late final AnsiTerminalController controller;
   final TerminalCapabilitiesDetector capabilitiesDetector;
   final TerminalSizeTracker sizeTracker;
   late final AnsiTerminalScreen _screen;
@@ -105,7 +100,6 @@ class AnsiTerminalWindow extends TerminalWindow
   Size get size => sizeTracker.currentSize;
 
   AnsiTerminalWindow({
-    required this.controller,
     required this.capabilitiesDetector,
     required this.sizeTracker,
     required TerminalListener listener,
@@ -127,7 +121,7 @@ class AnsiTerminalWindow extends TerminalWindow
   @override
   Future<void> attach() async {
     await super.attach();
-    controller
+    controller = AnsiTerminalController()
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
       ..changeFocusTrackingMode(enable: true)

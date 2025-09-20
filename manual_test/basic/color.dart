@@ -35,7 +35,7 @@ void paint() {
 
 void main() async {
   await window.attach();
-  window.controller.changeCursorVisibility(hiding: true);
+  window.setCursor(null);
   paint();
   Timer.periodic(Duration(milliseconds: 1000 ~/ 60), (_) {
     plus += 2;

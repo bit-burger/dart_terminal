@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dart_tui/ansi/ansi_terminal_window.dart';
-import 'package:dart_tui/core/style.dart';
 import 'package:dart_tui/core/terminal.dart';
 
 class ControlTerminalInputListener extends DefaultTerminalListener {
@@ -27,10 +26,8 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   }
 }
 
-final factory = AnsiTerminalWindowFactory.agnostic(
-  listener: ControlTerminalInputListener(),
-);
-final window = factory.createWindow();
+final factory = AnsiTerminalWindowFactory.agnostic();
+final window = factory.createWindow(listener: ControlTerminalInputListener());
 final marioImage = factory.createImage(
   size: Size(1200, 72),
   filePath: "mario_background.png",

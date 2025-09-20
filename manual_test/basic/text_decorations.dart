@@ -33,15 +33,15 @@ class TextDecorationsListener extends DefaultTerminalListener {
 
 final window = AnsiTerminalWindow.agnostic(listener: TextDecorationsListener());
 int style = 0;
-TextDecorationSet s(int style) => TextDecorationSet(
-  intense: style & 1 != 0,
-  faint: style & 2 != 0,
-  italic: style & 4 != 0,
-  crossedOut: style & 8 != 0,
-  doubleUnderline: style & 16 != 0,
-  fastBlink: style & 32 != 0,
-  slowBlink: style & 64 != 0,
-  underline: style & 128 != 0,
+TextDecorationSet s(int encodedStyle) => TextDecorationSet(
+  intense: encodedStyle & 1 != 0,
+  faint: encodedStyle & 2 != 0,
+  italic: encodedStyle & 4 != 0,
+  crossedOut: encodedStyle & 8 != 0,
+  doubleUnderline: encodedStyle & 16 != 0,
+  fastBlink: encodedStyle & 32 != 0,
+  slowBlink: encodedStyle & 64 != 0,
+  underline: encodedStyle & 128 != 0,
 );
 
 void paint() {
