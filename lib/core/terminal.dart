@@ -83,10 +83,10 @@ sealed class MouseEvent {
   );
 }
 
-final class MouseButtonPressEvent extends MouseEvent {
+final class MousePressEvent extends MouseEvent {
   final MouseButton button;
-  final MouseButtonPressEventType pressType;
-  const MouseButtonPressEvent(
+  final MousePressEventType pressType;
+  const MousePressEvent(
     super.shiftKeyPressed,
     super.metaKeyPressed,
     super.ctrlKeyPressed,
@@ -96,8 +96,8 @@ final class MouseButtonPressEvent extends MouseEvent {
   );
 }
 
-final class MouseHoverMotionEvent extends MouseEvent {
-  const MouseHoverMotionEvent(
+final class MouseHoverEvent extends MouseEvent {
+  const MouseHoverEvent(
     super.shiftKeyPressed,
     super.metaKeyPressed,
     super.ctrlKeyPressed,
@@ -120,7 +120,7 @@ final class MouseScrollEvent extends MouseEvent {
 /// Note: button 4-7 are used for scrolling
 enum MouseButton { left, right, middle, button8, button9, button10, button11 }
 
-enum MouseButtonPressEventType { press, release }
+enum MousePressEventType { press, release }
 
 abstract interface class TerminalListener {
   void screenResize(Size size);

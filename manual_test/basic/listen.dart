@@ -48,20 +48,20 @@ class ControlTerminalInputListener implements TerminalListener {
   @override
   void mouseEvent(MouseEvent event) {
     switch (event) {
-      case MouseButtonPressEvent(
+      case MousePressEvent(
         pressType: var t,
         button: var b,
         position: var pos,
       ):
         final bs = b.toString().substring(12);
-        if (t == MouseButtonPressEventType.press) {
+        if (t == MousePressEventType.press) {
           _print("press($bs,x:${pos.x},y:${pos.y})");
         } else {
           _print("release($bs,x:${pos.x},y:${pos.y})");
         }
       case MouseScrollEvent(xScroll: var x, yScroll: var y, position: var pos):
         _print("scroll(scrollX:$x,scrollY:$y,x:${pos.x},y:${pos.y});");
-      case MouseHoverMotionEvent(position: var pos):
+      case MouseHoverEvent(position: var pos):
         _print("motion(x:${pos.x},y:${pos.y})");
     }
   }

@@ -231,9 +231,11 @@ final class _WaitingAnsiTerminalInputProcessor
     final usingExtraButton = btnState & 128 != 0; // for button 8-11
     // technically information is getting lost here,
     // as the press events don't have a motion indicator
+    // and because this way not all events with the motion indicater (isMotion)
+    // will be processed into a hover event
     if (isMotion && lowButton == 3 && !usingExtraButton) {
       if (!isPrimaryAction) return null;
-      return MouseHoverMotionEvent(shift, meta, ctrl, pos);
+      return MouseHoverEvent(shift, meta, ctrl, pos);
     } else if (isScroll) {
       if (!isPrimaryAction) return null;
       final (xScroll, yScroll) = switch (lowButton) {
@@ -256,9 +258,9 @@ final class _WaitingAnsiTerminalInputProcessor
         _ => throw StateError("Release button cannot be pressed"),
       };
       final type = isPrimaryAction
-          ? MouseButtonPressEventType.press
-          : MouseButtonPressEventType.release;
-      return MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type);
+          ? MousePressEventType.press
+          : MousePressEventType.release;
+      return MousePressEvent(shift, meta, ctrl, pos, btn, type);
     }
   }
 }
@@ -321,7 +323,7 @@ final class _SimpleAnsiTerminalInputProcessor
       if (isMotion) {
         assert(lowButton == 3);
         assert(isPrimaryAction);
-        listener?.call(MouseHoverMotionEvent(shift, meta, ctrl, pos));
+        listener?.call(MouseHoverEvent(shift, meta, ctrl, pos));
       } else if (isScroll) {
         assert(isPrimaryAction);
         final (xScroll, yScroll) = switch (lowButton) {
@@ -346,10 +348,10 @@ final class _SimpleAnsiTerminalInputProcessor
           _ => throw StateError("Release button cannot be pressed"),
         };
         final type = isPrimaryAction
-            ? MouseButtonPressEventType.press
-            : MouseButtonPressEventType.release;
+            ? MousePressEventType.press
+            : MousePressEventType.release;
         listener?.call(
-          MouseButtonPressEvent(shift, meta, ctrl, pos, btn, type),
+          MousePressEvent(shift, meta, ctrl, pos, btn, type),
         );
       }
       return true;

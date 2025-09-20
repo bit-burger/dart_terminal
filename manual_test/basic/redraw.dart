@@ -37,14 +37,14 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
             );
           }
         }
-      case MouseButtonPressEvent(pressType: var t, position: var pos):
+      case MousePressEvent(pressType: var t, position: var pos):
         motionPos = pos;
-        if (t == MouseButtonPressEventType.release) {
+        if (t == MousePressEventType.release) {
           isPressed = false;
         } else {
           isPressed = true;
         }
-      case MouseHoverMotionEvent(position: var pos):
+      case MouseHoverEvent(position: var pos):
         motionPos = pos;
     }
     if (motionPos != null) {
