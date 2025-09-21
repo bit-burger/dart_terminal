@@ -25,7 +25,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   }
 }
 
-final factory = AnsiTerminalWindowFactory.agnostic();
+final factory = AnsiTerminalService.agnostic();
 final window = factory.createWindow(listener: ControlTerminalInputListener());
 final marioImage = factory.createImage(
   size: Size(1200, 72),

@@ -1,78 +1,128 @@
 import 'dart:async';
 import 'dart:io' as io;
-
 import 'package:dart_tui/core.dart';
 
-// Terminal input state
+/// States for the terminal input parser.
+///
+/// These states represent different stages of processing ANSI escape sequences
+/// and other input data.
 enum _TerminalInputState {
+  /// No special sequence is being processed
   none,
+
+  /// Processing regular string input
   string,
-  esc, // wait on [
-  csi, // wait on intermediate, parameters or final byte
+
+  /// Received escape character, waiting for '['
+  esc,
+
+  /// Processing Control Sequence Introducer (CSI),
+  /// waiting for parameters or final byte
+  csi,
 }
 
 typedef _T = _TerminalInputState;
 
+/// Event representing terminal focus changes.
+///
+/// Triggered when the terminal window gains or loses focus.
 class FocusEvent {
+  /// Whether the terminal window is currently focused
   final bool isFocused;
 
   FocusEvent({required this.isFocused});
 }
 
+/// Event containing the current cursor position.
+///
+/// Generated in response to cursor position queries.
 class CursorPositionEvent {
+  /// The current position of the cursor
   final Position position;
 
   CursorPositionEvent(this.position);
 }
 
+/// Processes input from an ANSI-compatible terminal.
+///
+/// This class handles parsing and interpretation of:
+/// - Regular text input
+/// - ANSI escape sequences
+/// - Mouse events
+/// - Control characters
+/// - Focus events
+/// - Cursor position reports
 sealed class AnsiTerminalInputProcessor {
-  /// [FocusEvent] for focusing events for the terminal window
-  /// [String] for normal input (can be multiple long on copy paste)
-  /// [CursorPositionEvent] for the cursor position (only after request)
-  /// [MouseEvent] for mouse events
-  /// [ControlCharacter] for various control characters (not complete)
+  /// Callback for processed input events.
+  ///
+  /// The callback receives one of:
+  /// - [FocusEvent] for terminal window focus changes
+  /// - [String] for normal text input (including paste operations)
+  /// - [CursorPositionEvent] for cursor position reports
+  /// - [MouseEvent] for mouse actions
+  /// - [ControlCharacter] for special keys and control combinations
   void Function(Object)? listener;
 
+  /// Subscription to the stdin byte stream
   late final StreamSubscription<List<int>> _ioSubscription;
 
   AnsiTerminalInputProcessor();
 
+  /// Begins listening for terminal input.
+  ///
+  /// Sets up stdin processing and event dispatch.
   FutureOr<void> startListening() {
     _ioSubscription = io.stdin.listen(_onBytes);
   }
 
+  /// Processes raw byte input from the terminal.
+  ///
+  /// This method is implemented by concrete processor types to handle
+  /// different input processing strategies.
   void _onBytes(List<int> bytes);
 
+  /// Stops listening for terminal input.
+  ///
+  /// Cleans up the stdin subscription.
   FutureOr<void> stopListening() => _ioSubscription.cancel();
 
+  /// Creates a processor that waits for complete sequences.
+  ///
+  /// This processor buffers input until complete sequences are received,
+  /// providing more accurate event parsing.
   factory AnsiTerminalInputProcessor.waiting() =>
       _WaitingAnsiTerminalInputProcessor();
 
+  /// Creates a simple processor for basic input handling.
   factory AnsiTerminalInputProcessor.simple() =>
       _SimpleAnsiTerminalInputProcessor();
 }
 
+/// Input processor that buffers and waits for complete sequences.
+///
+/// This implementation provides accurate parsing of complex input sequences by:
+/// - Buffering input until complete sequences are received
+/// - Handling timeout-based sequence termination
+/// - Supporting detailed escape sequence parsing
+/// - Managing state transitions for partial sequences
 final class _WaitingAnsiTerminalInputProcessor
     extends AnsiTerminalInputProcessor {
   _TerminalInputState _state = _T.none;
-  // Simplified CSI structure:
-  // CSI[parameter section (optional)][param1];[param2];[param3]...[final byte]
-  // parameter section is 58-63 in ascii
-  // params are numbers (ascii 0-9)
-  // final byte is 0x40-0x7E in ascii
-  //
-  // note: technically parameter section belongs to the param
-  // and before final byte there is the possibility of intermediates
-  // however these are not used by any of the interpreted CSIs here
-  late bool _isRealCsi; // if the CSI consists of ESC[
+
+  /// CSI sequence parsing state:
+  /// - Parameter section is optional, range 58-63 in ASCII
+  /// - Parameters are numbers (ASCII 0-9)
+  /// - Final byte is 0x40-0x7E in ASCII
+  late bool _isRealCsi; // if sequence starts with ESC[
   late int? _parameterSection;
   late List<int> _csiParams;
   late List<int> _currentCsiParamBytes;
   late List<int>
-  _allCsiBytesAfterEsc; // if not real CSI => begin at intermediate
+  _allCsiBytesAfterEsc; // for non-real CSI, starts at intermediate
   late int _final;
   late List<int> _stringBytes = [];
 
+  /// Timer for handling sequence timeout
   Timer? _inputWaitTimeoutTimer;
 
   @override
@@ -265,6 +315,13 @@ final class _WaitingAnsiTerminalInputProcessor
   }
 }
 
+/// Simple input processor for basic terminal interaction.
+///
+/// This implementation provides:
+/// - Immediate processing of input bytes
+/// - Basic control character recognition
+/// - Simple escape sequence parsing
+/// - No buffering or complex sequence handling
 final class _SimpleAnsiTerminalInputProcessor
     extends AnsiTerminalInputProcessor {
   @override
@@ -274,22 +331,30 @@ final class _SimpleAnsiTerminalInputProcessor
     }
   }
 
+  /// Attempts to interpret input as a control sequence.
+  ///
+  /// Returns true if the input was handled as a control sequence,
+  /// false if it should be treated as regular text input.
   bool _tryToInterpretControlCharacter(List<int> input) {
+    // Handle simple control characters (0x00-0x1F)
     if (input[0] <= 0x1a) {
-      // Ctrl+A thru Ctrl+Z are mapped to the 1st-26th entries in the
-      // enum, so it's easy to convert them across
       listener?.call(ControlCharacter.values[input[0]]);
       return true;
     }
+
+    // Handle delete key
     if (input[0] == 127) {
       listener?.call(ControlCharacter.delete);
       return true;
     }
+
+    // Handle single escape key
     if (input[0] == 27 && input.length == 1) {
       listener?.call(ControlCharacter.escape);
       return true;
     }
-    // reads for CSI (can be ESC[ or just CSI)
+
+    // Handle CSI sequences
     if (input[0] == 27 && input[1] == 91) {
       input = input.sublist(2);
     } else if (input[0] == 0x9b) {
@@ -297,23 +362,29 @@ final class _SimpleAnsiTerminalInputProcessor
     } else {
       return false;
     }
-    // focus
+
+    // Handle focus events
     if (input.first == 73 || input.first == 79) {
       assert(input.length == 1);
-      listener?.call(input.first == 73);
+      listener?.call(FocusEvent(isFocused: input.first == 73));
       return true;
     }
-    // mouse reporting https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+
+    // Handle mouse events
     if (input.first == 60) {
       if (input.last != 77 && input.last != 109) return true;
-      final isPrimaryAction =
-          input.last == 77; // secondary action is release for example
+      final isPrimaryAction = input.last == 77;
       input = input.sublist(1, input.length - 1);
+
       final args = String.fromCharCodes(
         input,
       ).split(";").map(int.tryParse).toList(growable: false);
+
       if (args.length != 3 || args.any((arg) => arg == null)) return true;
-      final btnState = args[0]!, pos = Position(args[1]! - 1, args[2]! - 1);
+
+      final btnState = args[0]!;
+      final pos = Position(args[1]! - 1, args[2]! - 1);
+
       final lowButton = btnState & 3;
       final shift = btnState & 4 != 0,
           meta = btnState & 8 != 0,
@@ -354,10 +425,12 @@ final class _SimpleAnsiTerminalInputProcessor
       }
       return true;
     }
-    // cursor position
+
+    // Handle cursor position reports
     if (input.last == 82) {
       int semicolonIndex = input.indexOf(59);
       if (semicolonIndex == -1) return true;
+
       final x = int.tryParse(
         String.fromCharCodes(input.sublist(0, semicolonIndex)),
       );
@@ -366,11 +439,13 @@ final class _SimpleAnsiTerminalInputProcessor
           input.sublist(semicolonIndex + 1, input.length - 1),
         ),
       );
+
       if (x == null || y == null) return true;
       listener?.call(CursorPositionEvent(Position(x - 1, y - 1)));
       return true;
     }
-    // other control characters
+
+    // Handle other control characters
     switch (input[0]) {
       case 65:
         listener?.call(ControlCharacter.arrowUp);

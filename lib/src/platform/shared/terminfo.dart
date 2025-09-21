@@ -1,14 +1,25 @@
 import 'dart:io' as io;
 
+/// Representation of terminal capabilities as defined in terminfo.
 class Terminfo {
+  /// Name of the terminal
   late final String name;
+
+  /// Aliases for the terminal
   final List<String> aliases = [];
+
+  /// Boolean capabilities
   final Set<String> booleans = {};
+
+  /// Numeric capabilities
   final Map<String, int> numerics = {};
+
+  /// String capabilities
   final Map<String, String> strings = {};
 
   Terminfo._();
 
+  /// Attempts to get the terminfo for the current terminal by invoking `infocmp`.
   static Future<Terminfo?> tryGet() async {
     final term = io.Platform.environment['TERM'];
     if (term == null || term == '') return null;
@@ -20,15 +31,15 @@ class Terminfo {
     }
   }
 
-  static final numericCapabilityRegex = RegExp(
+  static final _numericCapabilityRegex = RegExp(
     r'^(?<name>[a-z][a-z0-9]*)#(?<value>[0-9]+)$',
   );
 
-  static final stringCapabilityRegex = RegExp(
+  static final _stringCapabilityRegex = RegExp(
     r'^(?<name>[a-z][a-z0-9]*)=(?<value>\S+)$',
   );
 
-  static final booleanCapabilityRegex = RegExp(r'^[a-z][a-z0-9]*$');
+  static final _booleanCapabilityRegex = RegExp(r'^[a-z][a-z0-9]*$');
 
   /// Parse the output of `infocmp <name>` and fill this object
   void _tryParse(String output) {
@@ -58,7 +69,7 @@ class Terminfo {
       if (entry.isEmpty) continue;
 
       // Numeric capability
-      var match = numericCapabilityRegex.firstMatch(entry);
+      var match = _numericCapabilityRegex.firstMatch(entry);
       if (match != null) {
         final name = match.namedGroup('name')!;
         final value = int.tryParse(match.namedGroup('value')!)!;
@@ -66,7 +77,7 @@ class Terminfo {
         continue;
       }
       // String capability
-      match = stringCapabilityRegex.firstMatch(entry);
+      match = _stringCapabilityRegex.firstMatch(entry);
       if (match != null) {
         final name = match.namedGroup('name')!;
         final value = match.namedGroup('value')!;
@@ -74,7 +85,7 @@ class Terminfo {
         continue;
       }
       // Boolean capability
-      if (booleanCapabilityRegex.hasMatch(entry)) {
+      if (_booleanCapabilityRegex.hasMatch(entry)) {
         booleans.add(entry);
       }
     }

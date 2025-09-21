@@ -1,24 +1,35 @@
-/// based on https://notes.burke.libbey.me/ansi-escape-codes/ and
-/// https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
+/// Terminal color representation system supporting various color formats.
+///
+/// Based on ANSI escape codes from:
+/// - https://notes.burke.libbey.me/ansi-escape-codes/
+/// - https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
 abstract class TerminalColor {
-  /// representation in RGB, default core color is -1
+  /// RGB representation of the color. Default core colors use -1.
   final int rgbRep;
+
+  /// ANSI escape sequence for setting this color as background.
   final String termRepBackground;
+
+  /// ANSI escape sequence for setting this color as foreground.
   final String termRepForeground;
 
-  /// To uniquely identify a color.
+  /// Unique identifier for color comparison and categorization.
   ///
-  /// [DefaultTerminalColor] gets 0
-  /// [BasicTerminalColor] gets [1;9]
-  /// [BrightTerminalColor] gets [10;19]
-  /// [XTermTerminalColor] gets [20;999]
-  /// [RGBTerminalColor] gets [1000;19,999,999]
+  /// Color ranges are allocated as follows:
+  /// - [DefaultTerminalColor]: 0
+  /// - [BasicTerminalColor]: 1-9
+  /// - [BrightTerminalColor]: 10-19
+  /// - [XTermTerminalColor]: 20-999
+  /// - [RGBTerminalColor]: 1000-19,999,999
   ///
-  /// Custom implementations should avoid the ranges of
-  /// the library classes, by starting at 20,000,000,
-  /// or under 0.
+  /// Custom implementations should use codes either:
+  /// - Greater than 20,000,000
+  /// - Less than 0
   final int comparisonCode;
 
+  /// Creates a new terminal color with the specified properties.
+  ///
+  /// Custom implementations must use comparison codes outside the reserved ranges.
   const TerminalColor({
     required this.comparisonCode,
     required this.rgbRep,
@@ -41,35 +52,50 @@ abstract class TerminalColor {
   int get hashCode => comparisonCode;
 }
 
-/// A decoration of the foreground,
-/// not all are supported by all terminals.
+/// Text decorations that can be applied to terminal output.
+///
+/// Not all decorations are supported by all terminals. Some terminals may
+/// interpret these decorations differently or not support them at all.
 enum TextDecoration {
-  /// bold or increased intensity, turns off [faint]
+  /// Bold or increased intensity text.
+  /// Mutually exclusive with [faint].
   intense(1, 22, 0),
 
-  /// light font weight or decreased intensity, turns off [intense]
+  /// Decreased intensity or light font weight.
+  /// Mutually exclusive with [intense].
   faint(2, 22, 1),
 
+  /// Italic text style.
   italic(3, 23, 2),
 
-  /// turns off [doubleUnderline]
+  /// Single underline decoration.
+  /// Mutually exclusive with [doubleUnderline].
   underline(4, 24, 3),
 
-  /// turns off underline, on some terminals will not work,
-  /// and will instead disable bold intensity.
+  /// Double underline decoration.
+  /// Note: Some terminals may interpret this as disabling bold intensity
+  /// rather than applying a double underline.
   doubleUnderline(21, 24, 4),
 
-  /// turns off [fastBlink]
+  /// Slow blinking text.
+  /// Mutually exclusive with [fastBlink].
   slowBlink(5, 25, 5),
 
-  /// turns off [slowBlink]
+  /// Fast blinking text.
+  /// Mutually exclusive with [slowBlink].
   fastBlink(6, 25, 6),
 
-  /// not supported in Terminal.app
+  /// Crossed-out text.
+  /// Note: Not supported in Terminal.app
   crossedOut(9, 29, 7);
 
-  /// SGR code for turning decoration on and off in the core.
-  final String onCode, offCode;
+  /// ANSI SGR code for enabling this decoration
+  final String onCode;
+
+  /// ANSI SGR code for disabling this decoration
+  final String offCode;
+
+  /// Internal bit flag for decoration combinations
   final int bitFlag;
 
   const TextDecoration(int onCode, int offCode, int decorationNumber)
@@ -78,24 +104,33 @@ enum TextDecoration {
       offCode = "$offCode",
       bitFlag = 1 << decorationNumber;
 
+  /// Maximum bit flag used by decorations
   static const highestBitFlag = 7;
 }
 
-/// Represents multiple TextDecorations at one time.
+/// A collection of text decorations that can be applied together.
+///
+/// Provides efficient handling of multiple text decorations through
+/// bitwise operations.
 class TextDecorationSet {
+  /// Bit field representing active decorations
   final int bitField;
 
+  /// Creates a set with all possible decorations enabled
   const TextDecorationSet.all() : bitField = ~0;
 
+  /// Creates a set from an iterable of decorations
   TextDecorationSet.from(Iterable<TextDecoration> textDecorations)
     : bitField = textDecorations.fold(
         0,
         (previousValue, element) => previousValue & element.bitFlag,
       );
 
+  /// Creates a new set containing decorations present in both sets
   TextDecorationSet.union(TextDecorationSet a, TextDecorationSet b)
     : bitField = a.bitField & b.bitField;
 
+  /// Creates a new set with decorations from [a] excluding those in [b]
   TextDecorationSet.without(TextDecorationSet a, TextDecorationSet b)
     : bitField = a.bitField & ~b.bitField;
 

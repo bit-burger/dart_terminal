@@ -1,5 +1,4 @@
 import 'dart:async' as async;
-
 import 'package:dart_tui/core.dart';
 import '../shared/native_terminal_image.dart';
 import '../shared/signals.dart';
@@ -9,17 +8,29 @@ import 'ansi_terminal_controller.dart';
 import 'ansi_terminal_input_processor.dart';
 import 'ansi_terminal_screen.dart';
 
-class AnsiTerminalWindowFactory extends TerminalWindowFactory {
-  final TerminalCapabilitiesDetector _capabilitiesDetector;
-  final TerminalSizeTracker _sizeTracker;
+/// Factory for creating ANSI-compatible terminal windows.
+///
+///
+class AnsiTerminalService extends TerminalService {
+  /// Detector for terminal capabilities
+  final TerminalCapabilitiesDetector capabilitiesDetector;
 
-  AnsiTerminalWindowFactory({
-    required TerminalCapabilitiesDetector capabilitiesDetector,
-    required TerminalSizeTracker sizeTracker,
-  }) : _sizeTracker = sizeTracker,
-       _capabilitiesDetector = capabilitiesDetector;
+  /// Tracker for terminal window size changes
+  final TerminalSizeTracker sizeTracker;
 
-  factory AnsiTerminalWindowFactory.agnostic({
+  /// Creates a new factory with specific capability detection and size tracking.
+  AnsiTerminalService({
+    required this.capabilitiesDetector,
+    required this.sizeTracker,
+  });
+
+  /// Creates a factory with automatic configuration
+  /// corresponding to the current platform.
+  ///
+  /// This factory method provides sensible defaults for most use cases:
+  /// - Automatically detects terminal capabilities
+  /// - Sets up appropriate size tracking for the
+  factory AnsiTerminalService.agnostic({
     Duration? terminalSizePollingInterval,
   }) {
     final capabilitiesDetector = TerminalCapabilitiesDetector.agnostic();
@@ -27,7 +38,7 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
       pollingInterval:
           terminalSizePollingInterval ?? Duration(milliseconds: 50),
     );
-    return AnsiTerminalWindowFactory(
+    return AnsiTerminalService(
       capabilitiesDetector: capabilitiesDetector,
       sizeTracker: sizeTracker,
     );
@@ -37,8 +48,8 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   AnsiTerminalWindow createWindow({
     TerminalListener listener = const TerminalListener.empty(),
   }) => AnsiTerminalWindow(
-    capabilitiesDetector: _capabilitiesDetector,
-    sizeTracker: _sizeTracker,
+    capabilitiesDetector: capabilitiesDetector,
+    sizeTracker: sizeTracker,
     listener: listener,
   );
 
@@ -57,13 +68,24 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
     }
     return NativeTerminalImage.filled(size, backgroundColor);
   }
+
+  @override
+  async.Future<void> init() {
+    // TODO: implement init
+    throw UnimplementedError();
+  }
 }
 
+/// ANSI terminal window implementation.
+///
+/// This class represents an ANSI terminal window, providing methods to manipulate
+/// the terminal screen, handle input events, and manage cursor state. It uses
+/// ANSI escape sequences to perform operations in the terminal.
 class AnsiTerminalWindow extends TerminalWindow {
-  final TerminalCapabilitiesDetector capabilitiesDetector;
-  final TerminalSizeTracker sizeTracker;
-  final AnsiTerminalController controller = AnsiTerminalController();
-  final AnsiTerminalInputProcessor inputProcessor =
+  final TerminalCapabilitiesDetector _capabilitiesDetector;
+  final TerminalSizeTracker _sizeTracker;
+  final AnsiTerminalController _controller = AnsiTerminalController();
+  final AnsiTerminalInputProcessor _inputProcessor =
       AnsiTerminalInputProcessor.waiting();
   late final AnsiTerminalScreen _screen;
 
@@ -78,23 +100,39 @@ class AnsiTerminalWindow extends TerminalWindow {
   late Position? _cursorPosition;
 
   @override
-  Size get size => sizeTracker.currentSize;
+  Size get size => _sizeTracker.currentSize;
 
+  /// Creates a new ANSI terminal window with specified capability detection,
+  /// size tracking, and event listener.
+  ///
+  /// The [capabilitiesDetector] is used to determine the terminal's supported
+  /// features. The [sizeTracker] is responsible for monitoring terminal size
+  /// changes. The [listener] can be set to handle input and signal events.
+  ///
+  /// Use the [AnsiTerminalWindowFactory.agnostic] factory method for automatic
+  /// platform detection and configuration.
   AnsiTerminalWindow({
-    required this.capabilitiesDetector,
-    required this.sizeTracker,
+    required TerminalCapabilitiesDetector capabilitiesDetector,
+    required TerminalSizeTracker sizeTracker,
     required TerminalListener listener,
-  }) : super(listener: listener);
+  }) : _sizeTracker = sizeTracker,
+       _capabilitiesDetector = capabilitiesDetector,
+       super(listener: listener);
 
+  /// Creates an ANSI terminal window with automatic platform detection and
+  /// configuration.
+  ///
+  /// Uses the same configuration options as the
+  /// [AnsiTerminalWindowFactory.agnostic] factory.
   factory AnsiTerminalWindow.agnostic({
     TerminalListener listener = const TerminalListener.empty(),
     Duration? terminalSizePollingInterval,
-  }) => AnsiTerminalWindowFactory.agnostic(
+  }) => AnsiTerminalService.agnostic(
     terminalSizePollingInterval: terminalSizePollingInterval,
   ).createWindow(listener: listener);
 
   Future<Position> _getCursorPosition() {
-    controller.queryCursorPosition();
+    _controller.queryCursorPosition();
     _cursorPositionCompleter = async.Completer<Position>();
     return _cursorPositionCompleter!.future;
   }
@@ -102,14 +140,14 @@ class AnsiTerminalWindow extends TerminalWindow {
   @override
   Future<void> attach() async {
     await super.attach();
-    await capabilitiesDetector.detect();
-    controller
+    await _capabilitiesDetector.detect();
+    _controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
       ..changeFocusTrackingMode(enable: true)
       ..changeMouseTrackingMode(enable: true)
       ..changeLineWrappingMode(enable: false);
-    inputProcessor
+    _inputProcessor
       ..startListening()
       ..listener = _onInputEvent;
     for (final signal in AllowedSignal.values) {
@@ -119,10 +157,10 @@ class AnsiTerminalWindow extends TerminalWindow {
         }),
       );
     }
-    sizeTracker
+    _sizeTracker
       ..startTracking()
       ..listener = _onResizeEvent;
-    controller.setInputMode(true);
+    _controller.setInputMode(true);
     _cursorPosition = await _getCursorPosition();
     _screen = AnsiTerminalScreen(size)..initScreen();
   }
@@ -133,10 +171,10 @@ class AnsiTerminalWindow extends TerminalWindow {
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
-    inputProcessor.stopListening();
-    sizeTracker.stopTracking();
+    _inputProcessor.stopListening();
+    _sizeTracker.stopTracking();
     _screen.initScreen();
-    controller
+    _controller
       ..setInputMode(false)
       ..changeScreenMode(alternateBuffer: false)
       ..changeCursorVisibility(hiding: false)
@@ -173,34 +211,34 @@ class AnsiTerminalWindow extends TerminalWindow {
   }
 
   @override
-  void bell() => controller.bell();
+  void bell() => _controller.bell();
 
   @override
   void trySetTerminalSize(Size size) =>
-      controller.changeSize(size.width, size.height);
+      _controller.changeSize(size.width, size.height);
 
   @override
-  void setTerminalTitle(String title) => controller.changeTerminalTitle(title);
+  void setTerminalTitle(String title) => _controller.changeTerminalTitle(title);
 
   @override
   set cursor(CursorState? cursor) {
     if (cursor != null) {
       if (cursor.blinking != _cursorBlinking) {
-        controller.changeCursorBlinking(blinking: cursor.blinking);
+        _controller.changeCursorBlinking(blinking: cursor.blinking);
         _cursorBlinking = cursor.blinking;
       }
       if (cursor.position != _cursorPosition) {
         if (_cursorPosition == null) {
-          controller.changeCursorVisibility(hiding: false);
+          _controller.changeCursorVisibility(hiding: false);
         }
-        controller.setCursorPosition(
+        _controller.setCursorPosition(
           cursor.position.x + 1,
           cursor.position.y + 1,
         );
         _cursorPosition = cursor.position;
       }
     } else if (_cursorPosition != null) {
-      controller.changeCursorVisibility(hiding: true);
+      _controller.changeCursorVisibility(hiding: true);
       _cursorPosition = null;
     }
   }
@@ -283,7 +321,7 @@ class AnsiTerminalWindow extends TerminalWindow {
   void updateScreen() {
     final cursorMoved = _screen.updateScreen();
     if (cursorMoved && cursor != null) {
-      controller.setCursorPosition(
+      _controller.setCursorPosition(
         cursor!.position.x + 1,
         cursor!.position.y + 1,
       );
@@ -292,13 +330,13 @@ class AnsiTerminalWindow extends TerminalWindow {
 
   @override
   CapabilitySupport checkSupport(Capability capability) {
-    if (capabilitiesDetector.supportedCaps.contains(capability)) {
+    if (_capabilitiesDetector.supportedCaps.contains(capability)) {
       return CapabilitySupport.supported;
     }
-    if (capabilitiesDetector.assumedCaps.contains(capability)) {
+    if (_capabilitiesDetector.assumedCaps.contains(capability)) {
       return CapabilitySupport.assumed;
     }
-    if (capabilitiesDetector.unsupportedCaps.contains(capability)) {
+    if (_capabilitiesDetector.unsupportedCaps.contains(capability)) {
       return CapabilitySupport.unsupported;
     }
     return CapabilitySupport.unknown;

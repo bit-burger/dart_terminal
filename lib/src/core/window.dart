@@ -2,9 +2,24 @@ import 'geometry.dart';
 import 'graphics.dart';
 import 'style.dart';
 
-abstract class TerminalWindowFactory {
+
+// TODO: rename file to terminal.dart
+/// Service for creating and managing terminal windows and associated objects.
+///
+/// Provides an abstract interface for terminal operations, allowing for different
+/// implementations depending on the underlying platform or terminal capabilities.
+abstract class TerminalService {
+  /// Initializes the terminal service, .
+  Future<void> init();
+
+  /// Creates a new terminal window with an optional event listener.
   TerminalWindow createWindow({TerminalListener listener});
 
+  /// Creates a terminal image with the specified properties.
+  ///
+  /// [size] determines the dimensions of the image.
+  /// [filePath] optionally specifies an image file to load.
+  /// [backgroundColor] sets the default background color.
   TerminalImage createImage({
     required Size size,
     String? filePath,
@@ -12,8 +27,31 @@ abstract class TerminalWindowFactory {
   });
 }
 
-enum AllowedSignal { sighup, sigint, sigterm, sigusr1, sigusr2 }
+/// System signals that can be handled by the terminal application.
+///
+/// These signals correspond to standard POSIX signals that the application
+/// may need to respond to.
+enum AllowedSignal {
+  /// Hangup detected on controlling terminal
+  sighup,
 
+  /// Interrupt from keyboard (Ctrl+C)
+  sigint,
+
+  /// Termination signal
+  sigterm,
+
+  /// User-defined signal 1
+  sigusr1,
+
+  /// User-defined signal 2
+  sigusr2,
+}
+
+/// Control characters and special keys that can be received as input.
+///
+/// These represent both standard control characters (Ctrl+key combinations)
+/// and special keys like arrows and function keys.
 enum ControlCharacter {
   ctrlSpace, // NULL
   ctrlA,
@@ -42,7 +80,7 @@ enum ControlCharacter {
   ctrlX,
   ctrlY,
   ctrlZ, // Suspend
-
+  /// Navigation keys
   arrowLeft,
   arrowRight,
   arrowUp,
@@ -52,25 +90,35 @@ enum ControlCharacter {
   wordLeft,
   wordRight,
 
+  /// Editing keys
   home,
   end,
   escape,
   delete,
   wordBackspace,
 
-  // TODO: interpret these correctly (until F12)
-  // ignore: constant_identifier_names
+  /// Function keys F1-F4 (TODO: extend to F12)
   F1,
-  // ignore: constant_identifier_names
   F2,
-  // ignore: constant_identifier_names
   F3,
-  // ignore: constant_identifier_names
   F4,
 }
 
+/// Base class for mouse events in the terminal.
+///
+/// Provides common properties for all mouse-related events including
+/// modifier key states and cursor position.
 sealed class MouseEvent {
-  final bool shiftKeyPressed, metaKeyPressed, ctrlKeyPressed;
+  /// Whether the shift key was pressed during the event
+  final bool shiftKeyPressed;
+
+  /// Whether the meta (command/windows) key was pressed
+  final bool metaKeyPressed;
+
+  /// Whether the control key was pressed
+  final bool ctrlKeyPressed;
+
+  /// The position of the mouse cursor when the event occurred
   final Position position;
 
   const MouseEvent(
@@ -81,9 +129,16 @@ sealed class MouseEvent {
   );
 }
 
+/// Represents a mouse button press or release event.
+///
+/// Includes information about which button was involved and the type of press.
 final class MousePressEvent extends MouseEvent {
+  /// The mouse button that triggered the event
   final MouseButton button;
+
+  /// The type of press event (click, double-click, etc)
   final MousePressEventType pressType;
+
   const MousePressEvent(
     super.shiftKeyPressed,
     super.metaKeyPressed,
@@ -94,6 +149,9 @@ final class MousePressEvent extends MouseEvent {
   );
 }
 
+/// Represents mouse movement without button presses.
+///
+/// Used for tracking mouse position during hover operations.
 final class MouseHoverEvent extends MouseEvent {
   const MouseHoverEvent(
     super.shiftKeyPressed,
@@ -103,8 +161,16 @@ final class MouseHoverEvent extends MouseEvent {
   );
 }
 
+/// Represents mouse wheel scrolling.
+///
+/// Contains information about the scroll amount in both x and y directions.
 final class MouseScrollEvent extends MouseEvent {
-  final int xScroll, yScroll;
+  /// The amount of scrolling in the x direction
+  final int xScroll;
+
+  /// The amount of scrolling in the y direction
+  final int yScroll;
+
   const MouseScrollEvent(
     super.shiftKeyPressed,
     super.metaKeyPressed,
@@ -120,19 +186,30 @@ enum MouseButton { left, right, middle, button8, button9, button10, button11 }
 
 enum MousePressEventType { press, release }
 
+/// Interface for handling terminal events.
+///
+/// Implement this interface to receive events from the terminal such as
+/// input, screen resizes, and signal interruptions.
 abstract interface class TerminalListener {
+  /// Called when the terminal screen is resized.
   void screenResize(Size size);
 
+  /// Called when there is input from the user.
   void input(String s);
 
+  /// Called for control characters like Ctrl+C.
   void controlCharacter(ControlCharacter controlCharacter);
 
+  /// Called when the terminal receives a system signal.
   void signal(AllowedSignal signal);
 
+  /// Called for mouse events like clicks and movement.
   void mouseEvent(MouseEvent event);
 
+  /// Called when the terminal gains or loses focus.
   void focusChange(bool isFocused);
 
+  /// Creates a delegate that forwards events to the provided handlers.
   const factory TerminalListener.delegate({
     void Function(ControlCharacter) controlCharacter,
     void Function(bool) focusChange,
@@ -142,6 +219,7 @@ abstract interface class TerminalListener {
     void Function(AllowedSignal) signal,
   }) = _LambdaTerminalListener;
 
+  /// Creates an empty terminal listener that ignores all events.
   const factory TerminalListener.empty() = DefaultTerminalListener;
 }
 
@@ -213,6 +291,10 @@ class DefaultTerminalListener implements TerminalListener {
 
 class TerminalNotSupportedException extends Error {}
 
+/// Support levels for terminal capabilities.
+///
+/// Used to indicate whether a specific capability is supported, unsupported,
+/// or somewhere in between.
 enum CapabilitySupport implements Comparable<CapabilitySupport> {
   /// if a capability is very likely to be unsupported
   unsupported,
@@ -230,6 +312,10 @@ enum CapabilitySupport implements Comparable<CapabilitySupport> {
   int compareTo(CapabilitySupport other) => index.compareTo(other.index);
 }
 
+/// List of terminal capabilities.
+///
+/// These capabilities represent various features and options that may be
+/// supported by the terminal, such as color support and mouse event handling.
 enum Capability {
   /// Support for [BasicTerminalColor]
   basicColors,
@@ -269,6 +355,9 @@ enum Capability {
   textBlinkTextDecoration,
 }
 
+/// Represents the state of the text cursor.
+///
+/// Includes the cursor's position and whether it is currently blinking.
 final class CursorState {
   final Position position;
   final bool blinking;
@@ -285,6 +374,10 @@ final class CursorState {
   int get hashCode => Object.hash(position.hashCode, blinking);
 }
 
+/// Abstract class for terminal windows.
+///
+/// Represents a window in the terminal where content can be displayed.
+/// Supports features like cursor management, screen updating, and event handling.
 abstract class TerminalWindow implements TerminalCanvas {
   final TerminalListener listener;
   bool _isAttached = true;
@@ -318,15 +411,30 @@ abstract class TerminalWindow implements TerminalCanvas {
     _isDestroyed = true;
   }
 
+  /// Checks if a specific capability is supported by the terminal.
   CapabilitySupport checkSupport(Capability capability);
 
+  /// Tries to set the terminal size, adjusting if necessary.
   void trySetTerminalSize(Size size);
+
+  /// Sets the terminal window title.
   void setTerminalTitle(String title);
+
+  /// Triggers the terminal bell (audible or visible alert).
   void bell();
+
+  /// Draws the background of the terminal window.
   void drawBackground({TerminalColor color});
+
+  /// Updates the terminal screen with any pending changes.
   void updateScreen();
 }
 
+/// Abstract class for terminal canvases with clipping support.
+///
+/// Extends [TerminalCanvas] to add rectangular clipping regions,
+/// allowing for optimized redrawing of only a portion of the terminal.
 abstract class TerminalClipCanvas extends TerminalCanvas {
+  /// The current clipping rectangle, if any
   Rect? clip;
 }

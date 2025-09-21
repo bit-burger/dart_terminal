@@ -1,22 +1,34 @@
 import 'dart:io';
-
 import 'package:dart_tui/core.dart';
 import 'terminfo.dart';
 
+/// Detects and tracks terminal capabilities.
+///
+/// This system determines which features are supported by the current terminal
+/// environment, allowing the TUI to adapt its behavior accordingly.
 abstract class TerminalCapabilitiesDetector {
-  /// sure capabilities
+  /// Features that are definitively supported by the terminal
   final Set<Capability> supportedCaps = {};
 
-  /// assumed capabilities
+  /// Features that are likely supported but not confirmed
   final Set<Capability> assumedCaps = {};
 
-  /// override the assumed capabilities
+  /// Features that are explicitly not supported
   final Set<Capability> unsupportedCaps = {};
 
+  /// Performs the capability detection process
   Future<void> detect();
 
-  TerminalCapabilitiesDetector();
+  TerminalCapabilitiesDetector(); // ignore: public_member_api_docs
 
+  /// Creates a comprehensive detector that combines multiple detection strategies.
+  ///
+  /// This factory creates a detector that uses various methods to determine
+  /// terminal capabilities:
+  /// - True color support detection
+  /// - XTerm feature detection
+  /// - Windows-specific terminal features
+  /// - Terminfo database queries
   factory TerminalCapabilitiesDetector.agnostic() {
     return CombiningTerminalCapabilitiesDetector(
       detectors: [
@@ -29,70 +41,83 @@ abstract class TerminalCapabilitiesDetector {
   }
 }
 
+/// Combines results from multiple capability detectors.
+///
+/// This detector aggregates and reconciles capabilities reported by different
+/// detection strategies, resolving conflicts and producing a consolidated view
+/// of terminal capabilities.
 class CombiningTerminalCapabilitiesDetector
     extends TerminalCapabilitiesDetector {
+  /// The individual detectors to combine results from
   final Iterable<TerminalCapabilitiesDetector> detectors;
 
+  /// Creates a new combining detector with the specified [detectors].
   CombiningTerminalCapabilitiesDetector({required this.detectors});
 
   @override
   Future<void> detect() async {
     await Future.wait(detectors.map((d) => d.detect()));
+
+    // Combine supported capabilities from all detectors
     supportedCaps.addAll(
       detectors.fold<Set<Capability>>(
         {},
         (caps, detector) => caps..addAll(detector.supportedCaps),
       ),
     );
+
+    // Combine assumed capabilities
     assumedCaps.addAll(
       detectors.fold<Set<Capability>>(
         {},
         (caps, detector) => caps..addAll(detector.assumedCaps),
       ),
     );
+
+    // Combine explicitly unsupported capabilities
     unsupportedCaps.addAll(
       detectors.fold<Set<Capability>>(
         {},
         (caps, detector) => caps..addAll(detector.unsupportedCaps),
       ),
     );
+
+    // Remove capabilities that are explicitly unsupported from assumed list
     assumedCaps.removeAll(unsupportedCaps);
+
+    // Resolve conflicts between supported and unsupported capabilities
     final intersection = supportedCaps.intersection(unsupportedCaps);
     supportedCaps.removeAll(intersection);
     unsupportedCaps.removeAll(intersection);
   }
 }
 
-/// Detects capabilities for Xterm-compatible terminals via $TERM
+/// Detects capabilities specific to XTerm-compatible terminals.
+///
+/// Uses environment variables and terminal type information to determine
+/// supported features in XTerm and compatible terminal emulators.
 class XtermTerminalCapabilitiesDetector extends TerminalCapabilitiesDetector {
   @override
   Future<void> detect() async {
-    // -------------------------
-    // Environment heuristics
-    // -------------------------
+    // Get terminal type from environment
     final termEnv = Platform.environment['TERM'] ?? '';
-
     final isXterm = termEnv.contains('xterm');
 
     if (!isXterm) return;
 
-    // -------------------------
-    // Colors
-    // -------------------------
+    // Detect color support levels
     supportedCaps.add(Capability.basicColors);
     if (termEnv.contains('256')) {
       supportedCaps.add(Capability.extendedColors);
     }
-    if (termEnv.contains('direct')) supportedCaps.add(Capability.trueColors);
+    if (termEnv.contains('direct')) {
+      supportedCaps.add(Capability.trueColors);
+    }
 
-    // -------------------------
-    // Mouse support (SGR/X10)
-    // -------------------------
+    // Mouse support (using SGR/X10 protocols)
     supportedCaps.add(Capability.mouse);
 
-    // -------------------------
-    // Text decorations (SGR sequences)
-    // -------------------------
+    // Text formatting capabilities using SGR sequences
     supportedCaps.add(Capability.intenseTextDecoration);
     supportedCaps.add(Capability.underlineTextDecoration);
     supportedCaps.add(Capability.italicTextDecoration);

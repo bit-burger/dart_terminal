@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/dart-tui.iml" filepath="$PROJECT_DIR$/dart-tui.iml" />
-      <module fileurl="file://$USER_HOME$/Downloads/packages/packages.iml" filepath="$USER_HOME$/Downloads/packages/packages.iml" />
     </modules>
   </component>
 </project>
