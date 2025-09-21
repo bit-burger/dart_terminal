@@ -1,9 +1,8 @@
 import 'dart:io';
 
-import '../core/graphics.dart';
-import '../core/style.dart';
-import '../core/terminal.dart';
 import 'package:image/image.dart' as img;
+
+import 'package:dart_tui/core.dart';
 
 class NativeTerminalImage extends TerminalImage {
   final List<TerminalColor?> _data;

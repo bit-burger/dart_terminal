@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_tui/core/terminal.dart';
+import 'package:dart_tui/core.dart';
 
 abstract interface class TerminalSizeTracker {
   Size get currentSize;

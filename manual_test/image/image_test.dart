@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:dart_tui/ansi/ansi_terminal_window.dart';
-import 'package:dart_tui/core/terminal.dart';
+import 'package:dart_tui/ansi.dart';
 
 class ControlTerminalInputListener extends DefaultTerminalListener {
   @override
@@ -37,7 +36,7 @@ bool monaLisa = true;
 
 void paint() {
   if (monaLisa) {
-    final image = factory.createImage(size: window.size, filePath: "test.jpeg");
+    final image = factory.createImage(size: window.size, filePath: "pixelprompt.jpeg");
     window.drawImage(position: Position.zero, image: image);
   } else {
     window.drawImage(position: Position(offset, 0), image: marioImage);

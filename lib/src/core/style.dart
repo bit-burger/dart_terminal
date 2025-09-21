@@ -360,3 +360,27 @@ class BorderCharSet {
 
   factory BorderCharSet.double() => BorderCharSet.raw('═║╔╗╚╝╬╩╦╣╠');
 }
+
+extension type const TerminalForegroundStyle._(
+  ({TerminalColor color, TextDecorationSet textDecorations}) _
+) {
+  const TerminalForegroundStyle({
+    TerminalColor color = const DefaultTerminalColor(),
+    TextDecorationSet textDecorations = const TextDecorationSet.empty(),
+  }) : this._((color: color, textDecorations: textDecorations));
+
+  TerminalColor get color => _.color;
+  TextDecorationSet get textDecorations => _.textDecorations;
+}
+
+extension type const TerminalForeground._(
+  ({TerminalForegroundStyle style, int codePoint}) _
+) {
+  const TerminalForeground({
+    TerminalForegroundStyle style = const TerminalForegroundStyle(),
+    int codePoint = 32,
+  }) : this._((style: style, codePoint: codePoint));
+
+  TerminalForegroundStyle get style => _.style;
+  int get codePoint => _.codePoint;
+}

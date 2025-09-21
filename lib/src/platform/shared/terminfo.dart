@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 class Terminfo {
   late final String name;
@@ -10,10 +10,10 @@ class Terminfo {
   Terminfo._();
 
   static Future<Terminfo?> tryGet() async {
-    final term = Platform.environment['TERM'];
+    final term = io.Platform.environment['TERM'];
     if (term == null || term == '') return null;
     try {
-      final result = await Process.run('infocmp', [term]);
+      final result = await io.Process.run('infocmp', [term]);
       return Terminfo._().._tryParse(result.stdout.toString());
     } catch (e) {
       return null;

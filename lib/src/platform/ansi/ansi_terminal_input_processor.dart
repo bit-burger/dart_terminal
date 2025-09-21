@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' as io;
 
-import '../core/terminal.dart';
+import 'package:dart_tui/core.dart';
 
 // Terminal input state
 enum _TerminalInputState {
@@ -350,9 +350,7 @@ final class _SimpleAnsiTerminalInputProcessor
         final type = isPrimaryAction
             ? MousePressEventType.press
             : MousePressEventType.release;
-        listener?.call(
-          MousePressEvent(shift, meta, ctrl, pos, btn, type),
-        );
+        listener?.call(MousePressEvent(shift, meta, ctrl, pos, btn, type));
       }
       return true;
     }

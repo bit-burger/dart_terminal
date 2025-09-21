@@ -1,9 +1,7 @@
 import 'dart:io' show stdout;
 
-import 'package:dart_tui/ansi/native_terminal_image.dart';
-import 'package:dart_tui/core/style.dart';
-import 'package:dart_tui/core/terminal.dart';
-
+import 'package:dart_tui/core.dart';
+import '../shared/native_terminal_image.dart';
 import 'ansi_escape_codes.dart' as ansi_codes;
 
 const int _leftBorderMask = 1 << 63;

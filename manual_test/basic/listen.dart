@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:dart_tui/ansi/ansi_terminal_window.dart';
-import 'package:dart_tui/core/terminal.dart';
+import 'package:dart_tui/ansi.dart';
 
 List<String> buff = List.filled(1000, "", growable: true);
 

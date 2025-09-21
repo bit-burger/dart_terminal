@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_tui/ansi/ansi_terminal_window.dart';
-import 'package:dart_tui/core/style.dart';
-import 'package:dart_tui/core/terminal.dart';
+import 'package:dart_tui/ansi.dart';
 
 class ColorListener extends DefaultTerminalListener {
   @override

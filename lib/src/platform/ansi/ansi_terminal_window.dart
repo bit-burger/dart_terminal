@@ -1,15 +1,13 @@
-import 'dart:async';
-import 'dart:io' as io;
+import 'dart:async' as async;
 
-import 'package:dart_tui/ansi/ansi_terminal_input_processor.dart';
-import 'package:dart_tui/ansi/ansi_terminal_screen.dart';
-import 'package:dart_tui/ansi/terminal_capabilities.dart';
-import 'package:dart_tui/ansi/terminal_size_tracker.dart';
-
-import '../core/style.dart';
-import '../core/terminal.dart';
+import 'package:dart_tui/core.dart';
+import '../shared/native_terminal_image.dart';
+import '../shared/signals.dart';
+import '../shared/terminal_capabilities.dart';
+import '../shared/terminal_size_tracker.dart';
 import 'ansi_terminal_controller.dart';
-import 'native_terminal_image.dart';
+import 'ansi_terminal_input_processor.dart';
+import 'ansi_terminal_screen.dart';
 
 class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   final TerminalCapabilitiesDetector _capabilitiesDetector;
@@ -61,23 +59,6 @@ class AnsiTerminalWindowFactory extends TerminalWindowFactory {
   }
 }
 
-extension on AllowedSignal {
-  io.ProcessSignal processSignal() {
-    switch (this) {
-      case AllowedSignal.sighup:
-        return io.ProcessSignal.sighup;
-      case AllowedSignal.sigint:
-        return io.ProcessSignal.sigint;
-      case AllowedSignal.sigterm:
-        return io.ProcessSignal.sigterm;
-      case AllowedSignal.sigusr1:
-        return io.ProcessSignal.sigusr1;
-      case AllowedSignal.sigusr2:
-        return io.ProcessSignal.sigusr2;
-    }
-  }
-}
-
 class AnsiTerminalWindow extends TerminalWindow {
   final TerminalCapabilitiesDetector capabilitiesDetector;
   final TerminalSizeTracker sizeTracker;
@@ -86,8 +67,8 @@ class AnsiTerminalWindow extends TerminalWindow {
       AnsiTerminalInputProcessor.waiting();
   late final AnsiTerminalScreen _screen;
 
-  final List<StreamSubscription> _subscriptions = [];
-  Completer<Position>? _cursorPositionCompleter;
+  final List<async.StreamSubscription<Object>> _subscriptions = [];
+  async.Completer<Position>? _cursorPositionCompleter;
 
   @override
   CursorState? get cursor => _cursorPosition == null
@@ -114,7 +95,7 @@ class AnsiTerminalWindow extends TerminalWindow {
 
   Future<Position> _getCursorPosition() {
     controller.queryCursorPosition();
-    _cursorPositionCompleter = Completer<Position>();
+    _cursorPositionCompleter = async.Completer<Position>();
     return _cursorPositionCompleter!.future;
   }
 

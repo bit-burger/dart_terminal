@@ -1,8 +1,7 @@
 import 'dart:io';
 
-import 'package:dart_tui/ansi/terminfo.dart';
-
-import '../core/terminal.dart';
+import 'package:dart_tui/core.dart';
+import 'terminfo.dart';
 
 abstract class TerminalCapabilitiesDetector {
   /// sure capabilities
