@@ -21,6 +21,7 @@ linter:
     library_prefixes:
       'dart:io': io
       'dart:async': async
+      'dart:math': math
       'package:image/image.dart': img
       'package:dart_console/src/ffi/termlib.dart': console
 
