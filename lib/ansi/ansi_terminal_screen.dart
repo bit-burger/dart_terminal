@@ -269,7 +269,6 @@ class AnsiTerminalScreen {
   // more optimizations possible
   // (e.g. only write x coordinate if moving horizontally)
   bool updateScreen() {
-    _redrawBuff.clear(); // TODO: move to end
     if (_backgroundFill != null) {
       _transition(currentFg, _backgroundFill!);
       _redrawBuff.write(ansi_codes.eraseEntireScreen);
@@ -297,6 +296,7 @@ class AnsiTerminalScreen {
       }
     }
     stdout.write(_redrawBuff.toString());
+    _redrawBuff.clear();
     return cursorMoved;
   }
 
