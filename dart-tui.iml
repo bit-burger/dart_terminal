@@ -12,12 +12,12 @@
       <excludeFolder url="file://$MODULE_DIR$/packages/advanced_terminal/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/packages/advanced_terminal/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/packages/advanced_terminal/build" />
-      <excludeFolder url="file://$MODULE_DIR$/packages/test/.dart_tool" />
-      <excludeFolder url="file://$MODULE_DIR$/packages/test/.pub" />
-      <excludeFolder url="file://$MODULE_DIR$/packages/test/build" />
       <excludeFolder url="file://$MODULE_DIR$/packages/xuehe_terminal/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/packages/xuehe_terminal/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/packages/xuehe_terminal/build" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/pixelprompt/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/pixelprompt/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/pixelprompt/build" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Dart SDK" level="project" />

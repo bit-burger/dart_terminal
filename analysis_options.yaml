@@ -11,28 +11,19 @@
 # (the recommended set includes the core lints).
 # The core lints are also what is used by pub.dev for scoring packages.
 
-include: package:lints/recommended.yaml
+include: package:very_good_analysis/analysis_options.yaml
+
+linter:
+  rules:
+    public_member_api_docs: true
+    library_names: true
+    avoid_positional_boolean_parameters: true
+    library_prefixes:
+      'dart:io': io
+      'dart:async': async
+      'package:image/image.dart': img
+      'package:dart_console/src/ffi/termlib.dart': console
 
 analyzer:
-  enable-experiment:
-    - const-functions
-#    - augmentations
-#    - macros
-
-
-
-# Uncomment the following section to specify additional rules.
-
-# linter:
-#   rules:
-#     - camel_case_types
-
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
-
-# For more information about the core and recommended set of lints, see
-# https://dart.dev/go/core-lints
-
-# For additional information about configuring this file, see
-# https://dart.dev/guides/language/analysis-options
+  exclude:
+    - packages/*+
