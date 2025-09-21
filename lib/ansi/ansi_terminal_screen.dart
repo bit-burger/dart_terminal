@@ -33,18 +33,23 @@ class _TerminalCell {
   }
 
   bool calculateDifference() {
-    if (newFg != null) {
-      fg = newFg!;
-      if (newBg != null) {
+    assert(changed);
+    bool diff = false;
+    if(newFg != null) {
+      if(newFg != fg) {
+        diff = true;
+        fg = newFg!;
+      }
+      newFg = null;
+    }
+    if(newBg != null) {
+      if(newBg != bg) {
+        diff = true;
         bg = newBg!;
       }
-      return true;
+      newBg = null;
     }
-    if (newBg != null) {
-      bg = newBg!;
-      return true;
-    }
-    return false;
+    return diff;
   }
 
   void reset(TerminalColor background) {
@@ -89,7 +94,7 @@ List<_TerminalCell> _rowGen(int length) =>
 class AnsiTerminalScreen {
   final List<List<_TerminalCell>> _screenBuffer;
   final List<bool> _changeList;
-  TerminalColor? _backgroundReset;
+  TerminalColor? _backgroundFill;
 
   AnsiTerminalScreen(Size size)
     : _size = size,
@@ -133,8 +138,8 @@ class AnsiTerminalScreen {
     _size = size;
   }
 
-  void resetBackground([TerminalColor color = const DefaultTerminalColor()]) {
-    _backgroundReset = color;
+  void fillBackground([TerminalColor color = const DefaultTerminalColor()]) {
+    _backgroundFill = color;
     for (int j = 0; j < size.height; j++) {
       _changeList[j] = false;
       for (int i = 0; i < size.width; i++) {
@@ -253,26 +258,24 @@ class AnsiTerminalScreen {
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 
-  // more optimizations possible (only write x coordinate)
-  void updateScreen() {
-    _redrawBuff.clear();
-    if (_backgroundReset != null) {
-      if (_backgroundReset == const DefaultTerminalColor()) {
-        _redrawBuff.write(ansi_codes.resetAllFormats);
-        _redrawBuff.write(ansi_codes.eraseEntireScreen);
-      } else {
-        _redrawBuff.write(
-          "${ansi_codes.CSI}${_backgroundReset!.termRepBackground}m",
-        );
-        _redrawBuff.write(ansi_codes.eraseEntireScreen);
-        _redrawBuff.write(ansi_codes.resetAllFormats);
-      }
-      _backgroundReset = null;
-    } else {
-      _redrawBuff.write(ansi_codes.resetAllFormats);
-    }
+  void initScreen() {
+    _redrawBuff.write(ansi_codes.resetAllFormats);
+    _redrawBuff.write(ansi_codes.eraseEntireScreen);
     currentFg = TerminalForegroundStyle();
     currentBg = DefaultTerminalColor();
+  }
+
+  /// returns if cursor has been moved
+  // more optimizations possible
+  // (e.g. only write x coordinate if moving horizontally)
+  bool updateScreen() {
+    _redrawBuff.clear(); // TODO: move to end
+    if (_backgroundFill != null) {
+      _transition(currentFg, _backgroundFill!);
+      _redrawBuff.write(ansi_codes.eraseEntireScreen);
+      _backgroundFill = null;
+    }
+    bool cursorMoved = false;
     for (int j = 0; j < size.height; j++) {
       if (!_changeList[j]) continue;
       _changeList[j] = false;
@@ -287,13 +290,14 @@ class AnsiTerminalScreen {
           _redrawBuff.writeCharCode(cell.fg.codePoint);
           lastWritten = true;
           cell.changed = false;
+          cursorMoved = true;
         } else {
           lastWritten = false;
         }
       }
     }
-    _transition(TerminalForegroundStyle(), DefaultTerminalColor());
     stdout.write(_redrawBuff.toString());
+    return cursorMoved;
   }
 
   bool _firstParameter = true;

@@ -142,9 +142,7 @@ class AnsiTerminalWindow extends TerminalWindow {
       ..listener = _onResizeEvent;
     controller.setInputMode(true);
     _cursorPosition = await _getCursorPosition();
-    _screen = AnsiTerminalScreen(size)
-      ..resetBackground()
-      ..updateScreen();
+    _screen = AnsiTerminalScreen(size)..initScreen();
   }
 
   @override
@@ -155,9 +153,7 @@ class AnsiTerminalWindow extends TerminalWindow {
     }
     inputProcessor.stopListening();
     sizeTracker.stopTracking();
-    _screen
-      ..resetBackground()
-      ..updateScreen();
+    _screen.initScreen();
     controller
       ..setInputMode(false)
       ..changeScreenMode(alternateBuffer: false)
@@ -186,7 +182,7 @@ class AnsiTerminalWindow extends TerminalWindow {
   void _onResizeEvent() {
     /// TODO: optimization?
     _screen
-      ..resetBackground()
+      ..fillBackground()
       ..updateScreen()
       ..resize(size);
     listener.screenResize(size);
@@ -282,7 +278,7 @@ class AnsiTerminalWindow extends TerminalWindow {
     bool optimize = true,
   }) {
     if (optimize) {
-      _screen.resetBackground(color);
+      _screen.fillBackground(color);
     } else {
       _screen.drawRect(Position.zero & size, color, null);
     }
@@ -290,8 +286,8 @@ class AnsiTerminalWindow extends TerminalWindow {
 
   @override
   void updateScreen() {
-    _screen.updateScreen();
-    if (cursorPosition != null) {
+    final cursorMoved = _screen.updateScreen();
+    if (cursorMoved && cursorPosition != null) {
       controller.setCursorPosition(
         cursorPosition!.x + 1,
         cursorPosition!.y + 1,
