@@ -7,7 +7,7 @@ List<String> buff = List.filled(1000, "", growable: true);
 void _print(String nexText) {
   buff.add(nexText);
   window.drawBackground();
-  for(int i = 0; i < window.size.height; i++) {
+  for (int i = 0; i < window.size.height; i++) {
     final text = buff[buff.length - i - 1];
     window.drawText(text: text, position: Position(0, i));
   }
@@ -47,11 +47,7 @@ class ControlTerminalInputListener implements TerminalListener {
   @override
   void mouseEvent(MouseEvent event) {
     switch (event) {
-      case MousePressEvent(
-        pressType: var t,
-        button: var b,
-        position: var pos,
-      ):
+      case MousePressEvent(pressType: var t, button: var b, position: var pos):
         final bs = b.toString().substring(12);
         if (t == MousePressEventType.press) {
           _print("press($bs,x:${pos.x},y:${pos.y})");

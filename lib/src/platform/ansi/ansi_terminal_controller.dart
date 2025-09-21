@@ -13,7 +13,7 @@ class AnsiTerminalController {
   }
 
   void changeCursorBlinking({required bool blinking}) {
-    if(blinking) {
+    if (blinking) {
       io.stdout.write(ansi_codes.enableCursorBlink);
     } else {
       io.stdout.write(ansi_codes.disableCursorBlink);
@@ -42,7 +42,8 @@ class AnsiTerminalController {
 
   void bell() => io.stdout.write(ansi_codes.bell);
 
-  void saveCursorPosition() => io.stdout.write(ansi_codes.saveCursorPositionDEC);
+  void saveCursorPosition() =>
+      io.stdout.write(ansi_codes.saveCursorPositionDEC);
 
   void restoreCursorPosition() =>
       io.stdout.write(ansi_codes.restoreCursorPositionDEC);

@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2b60bcee-cb88-4a07-a3b8-b6c208edb22e" name="Default Changelist" comment="add more configuration">
+      <change afterPath="$PROJECT_DIR$/pre-commit.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis_options.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/analysis_options.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/format.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_controller.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_controller.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/shared/terminal_size_tracker.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/shared/terminal_size_tracker.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manual_test/basic/background.dart" beforeDir="false" afterPath="$PROJECT_DIR$/manual_test/basic/background.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manual_test/basic/listen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/manual_test/basic/listen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manual_test/basic/redraw.dart" beforeDir="false" afterPath="$PROJECT_DIR$/manual_test/basic/redraw.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manual_test/image/image_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/manual_test/image/image_test.dart" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dart Test File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;bit-burger&quot;
+  }
+}</component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/bit-burger/dart-tui&quot;,
+    &quot;accountId&quot;: &quot;402d615c-73ef-4ae8-b4b6-a147206f6d2a&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="2SvRmNqiiBRIylZ8PleAZkAC2lU" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Dart Command Line App.flutter.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.screen_buffer_speed_testing.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.terminfo.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.test.dart.executor&quot;: &quot;Debug&quot;,
+    &quot;Dart Command Line App.testtest.dart.executor&quot;: &quot;Debug&quot;,
+    &quot;Dart Command Line App.testtst.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Remote Debug.Unnamed.executor&quot;: &quot;Debug&quot;,
+    &quot;Flutter Test.tests in color_test.dart.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/tonyborchert/Documents/Flutter/dart-tui/manual_test/border&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/manual_test/border" />
+      <recent name="$PROJECT_DIR$/manual_test" />
+      <recent name="$PROJECT_DIR$/lib/ansi" />
+      <recent name="$PROJECT_DIR$/package" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/manual_test/stupid" />
+      <recent name="$PROJECT_DIR$/lib/src" />
+      <recent name="$PROJECT_DIR$/lib/platform/shared" />
+      <recent name="$PROJECT_DIR$/lib/platform/ansi" />
+      <recent name="$PROJECT_DIR$/lib/platform" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Dart Command Line App.packages.dart">
+    <configuration name="dart_tui.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/packages/xxtestbinaryofsorts/dart_tui.dart" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="flutter.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
+      <option name="VMOptions" value="--enable-experiment=const-functions" />
+      <option name="filePath" value="$PROJECT_DIR$/lib/flutter.dart" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="packages.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
+      <option name="filePath" value="$USER_HOME$/Downloads/packages/bin/packages.dart" />
+      <option name="workingDirectory" value="$USER_HOME$/Downloads/packages" />
+      <method v="2" />
+    </configuration>
+    <configuration name="terminfo.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/lib/src/platform/shared/terminfo.dart" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="testtest.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/manual_test/local/testtest.dart" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="testtst.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/manual_test/local/testtst.dart" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unnamed" type="DartRemoteDebugConfigurationType" factoryName="Dart Remote Debug">
+      <option name="dartProjectPath" value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Tests in dart-tui" type="DartTestRunConfigurationType" factoryName="Dart Test">
+      <option name="filePath" value="$PROJECT_DIR$" />
+      <option name="scope" value="FOLDER" />
+      <method v="2" />
+    </configuration>
+    <configuration name="tests in color_test.dart" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true">
+      <option name="testFile" value="$PROJECT_DIR$/test/manual/color_test.dart" />
+      <option name="useRegexp" value="false" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Dart Command Line App.packages.dart" />
+      <item itemvalue="Dart Command Line App.dart_tui.dart" />
+      <item itemvalue="Dart Command Line App.testtest.dart" />
+      <item itemvalue="Dart Command Line App.testtst.dart" />
+      <item itemvalue="Dart Command Line App.terminfo.dart" />
+      <item itemvalue="Dart Command Line App.flutter.dart" />
+      <item itemvalue="Dart Remote Debug.Unnamed" />
+      <item itemvalue="Dart Test.Tests in dart-tui" />
+      <item itemvalue="Flutter Test.tests in color_test.dart" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Dart Command Line App.testtest.dart" />
+        <item itemvalue="Dart Command Line App.testtst.dart" />
+        <item itemvalue="Flutter Test.tests in color_test.dart" />
+        <item itemvalue="Dart Command Line App.terminfo.dart" />
+        <item itemvalue="Dart Command Line App.flutter.dart" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2b60bcee-cb88-4a07-a3b8-b6c208edb22e" name="Default Changelist" comment="" />
+      <created>1690025225924</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1690025225924</updated>
+    </task>
+    <task id="LOCAL-00001" summary="commit everything">
+      <option name="closed" value="true" />
+      <created>1757361043117</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1757361043117</updated>
+    </task>
+    <task id="LOCAL-00002" summary="add mouse and focusin/focusout events to ansi terminal window">
+      <option name="closed" value="true" />
+      <created>1757370579012</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1757370579012</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Change structure AnsiTerminalWindow">
+      <option name="closed" value="true" />
+      <created>1757539468616</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1757539468616</updated>
+    </task>
+    <task id="LOCAL-00004" summary="fix error on enable mouse support">
+      <option name="closed" value="true" />
+      <created>1757622881248</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1757622881248</updated>
+    </task>
+    <task id="LOCAL-00005" summary="basic draw changes support">
+      <option name="closed" value="true" />
+      <created>1757627925124</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1757627925124</updated>
+    </task>
+    <task id="LOCAL-00006" summary="clear screen on alternate buffer">
+      <option name="closed" value="true" />
+      <created>1757775974190</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1757775974190</updated>
+    </task>
+    <task id="LOCAL-00007" summary="improve terminal interface">
+      <option name="closed" value="true" />
+      <created>1757784919233</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1757784919234</updated>
+    </task>
+    <task id="LOCAL-00008" summary="improve test suite">
+      <option name="closed" value="true" />
+      <created>1757784984912</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1757784984912</updated>
+    </task>
+    <task id="LOCAL-00009" summary="delete old packages">
+      <option name="closed" value="true" />
+      <created>1757785089900</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1757785089900</updated>
+    </task>
+    <task id="LOCAL-00010" summary="delete auto generated test">
+      <option name="closed" value="true" />
+      <created>1757785103497</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1757785103497</updated>
+    </task>
+    <task id="LOCAL-00011" summary="delete unnecesary library">
+      <option name="closed" value="true" />
+      <created>1757786330147</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1757786330147</updated>
+    </task>
+    <task id="LOCAL-00012" summary="update style.dart">
+      <option name="closed" value="true" />
+      <created>1757786337951</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1757786337951</updated>
+    </task>
+    <task id="LOCAL-00013" summary="small fixes">
+      <option name="closed" value="true" />
+      <created>1757796886415</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1757796886415</updated>
+    </task>
+    <task id="LOCAL-00014" summary="update manual test suite">
+      <option name="closed" value="true" />
+      <created>1757796898488</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1757796898488</updated>
+    </task>
+    <task id="LOCAL-00015" summary="changes to drawing">
+      <option name="closed" value="true" />
+      <created>1757798535708</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1757798535708</updated>
+    </task>
+    <task id="LOCAL-00016" summary="rework drawing">
+      <option name="closed" value="true" />
+      <created>1757800557561</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1757800557561</updated>
+    </task>
+    <task id="LOCAL-00017" summary="delete .idea folder">
+      <option name="closed" value="true" />
+      <created>1757800587602</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1757800587602</updated>
+    </task>
+    <task id="LOCAL-00018" summary="add BorderCharSet">
+      <option name="closed" value="true" />
+      <created>1758196708864</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1758196708864</updated>
+    </task>
+    <task id="LOCAL-00019" summary="major improvements for window">
+      <option name="closed" value="true" />
+      <created>1758208741577</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1758208741577</updated>
+    </task>
+    <task id="LOCAL-00020" summary="fix border test">
+      <option name="closed" value="true" />
+      <created>1758211950929</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1758211950929</updated>
+    </task>
+    <task id="LOCAL-00021" summary="delete unnecesary test files">
+      <option name="closed" value="true" />
+      <created>1758211999518</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1758211999518</updated>
+    </task>
+    <task id="LOCAL-00022" summary="improve api">
+      <option name="closed" value="true" />
+      <created>1758377539642</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1758377539642</updated>
+    </task>
+    <task id="LOCAL-00023" summary="improve api of terminal window">
+      <option name="closed" value="true" />
+      <created>1758378314053</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1758378314053</updated>
+    </task>
+    <task id="LOCAL-00024" summary="improve api of terminal window factory">
+      <option name="closed" value="true" />
+      <created>1758378321083</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1758378321083</updated>
+    </task>
+    <task id="LOCAL-00025" summary="improve AnsiTerminalController API">
+      <option name="closed" value="true" />
+      <created>1758378794252</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1758378794252</updated>
+    </task>
+    <task id="LOCAL-00026" summary="improve input processesing">
+      <option name="closed" value="true" />
+      <created>1758405628666</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1758405628666</updated>
+    </task>
+    <task id="LOCAL-00027" summary="improve window api">
+      <option name="closed" value="true" />
+      <created>1758406381730</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1758406381730</updated>
+    </task>
+    <task id="LOCAL-00028" summary="change that background overrides forground on screen">
+      <option name="closed" value="true" />
+      <created>1758407128812</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1758407128812</updated>
+    </task>
+    <task id="LOCAL-00029" summary="change that background overrides forground on screen">
+      <option name="closed" value="true" />
+      <created>1758408112916</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1758408112916</updated>
+    </task>
+    <task id="LOCAL-00030" summary="add assertion in terminal screen">
+      <option name="closed" value="true" />
+      <created>1758411504331</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1758411504331</updated>
+    </task>
+    <task id="LOCAL-00031" summary="improve listen test">
+      <option name="closed" value="true" />
+      <created>1758411523536</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1758411523536</updated>
+    </task>
+    <task id="LOCAL-00032" summary="fix input processor">
+      <option name="closed" value="true" />
+      <created>1758411543354</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1758411543359</updated>
+    </task>
+    <task id="LOCAL-00033" summary="improve mouse event naming">
+      <option name="closed" value="true" />
+      <created>1758411676636</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1758411676636</updated>
+    </task>
+    <task id="LOCAL-00034" summary="improve screen api and performance">
+      <option name="closed" value="true" />
+      <created>1758460556919</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1758460556919</updated>
+    </task>
+    <task id="LOCAL-00035" summary="small change for updateScreen">
+      <option name="closed" value="true" />
+      <created>1758461602386</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1758461602386</updated>
+    </task>
+    <task id="LOCAL-00036" summary="improve terminal capabilities">
+      <option name="closed" value="true" />
+      <created>1758478010408</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1758478010408</updated>
+    </task>
+    <task id="LOCAL-00037" summary="remove unnecessary file">
+      <option name="closed" value="true" />
+      <created>1758478034693</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1758478034693</updated>
+    </task>
+    <task id="LOCAL-00038" summary="fix manual test">
+      <option name="closed" value="true" />
+      <created>1758478191880</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1758478191880</updated>
+    </task>
+    <task id="LOCAL-00039" summary="change package">
+      <option name="closed" value="true" />
+      <created>1758485878686</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1758485878686</updated>
+    </task>
+    <task id="LOCAL-00040" summary="add formatting for imports">
+      <option name="closed" value="true" />
+      <created>1758488916947</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1758488916947</updated>
+    </task>
+    <task id="LOCAL-00041" summary="new project structure">
+      <option name="closed" value="true" />
+      <created>1758488927724</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1758488927724</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="add BorderCharSet" />
+    <MESSAGE value="major improvements for window" />
+    <MESSAGE value="fix border test" />
+    <MESSAGE value="delete unnecesary test files" />
+    <MESSAGE value="improve api" />
+    <MESSAGE value="improve api of terminal window" />
+    <MESSAGE value="improve api of terminal window factory" />
+    <MESSAGE value="improve AnsiTerminalController API" />
+    <MESSAGE value="improve input processesing" />
+    <MESSAGE value="improve window api" />
+    <MESSAGE value="change that background overrides forground on screen" />
+    <MESSAGE value="add assertion in terminal screen" />
+    <MESSAGE value="improve listen test" />
+    <MESSAGE value="fix input processor" />
+    <MESSAGE value="improve mouse event naming" />
+    <MESSAGE value="improve screen api and performance" />
+    <MESSAGE value="small change for updateScreen" />
+    <MESSAGE value="improve terminal capabilities" />
+    <MESSAGE value="remove unnecessary file" />
+    <MESSAGE value="fix manual test" />
+    <MESSAGE value="change package" />
+    <MESSAGE value="add formatting for imports" />
+    <MESSAGE value="new project structure" />
+    <MESSAGE value="a" />
+    <MESSAGE value="add more configuration" />
+    <option name="LAST_COMMIT_MESSAGE" value="add more configuration" />
+  </component>
+</project>

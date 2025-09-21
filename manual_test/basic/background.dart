@@ -17,6 +17,9 @@ final window = AnsiTerminalWindow.agnostic(listener: ExitListener());
 void main() async {
   await window.attach();
   window.drawBackground(color: BasicTerminalColor.red);
-  window.drawText(text: "Resize to wipe everything.", position: Position(10, 10));
+  window.drawText(
+    text: "Resize to wipe everything.",
+    position: Position(10, 10),
+  );
   window.updateScreen();
 }

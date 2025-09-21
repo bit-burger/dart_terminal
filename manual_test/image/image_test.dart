@@ -36,7 +36,10 @@ bool monaLisa = true;
 
 void paint() {
   if (monaLisa) {
-    final image = factory.createImage(size: window.size, filePath: "pixelprompt.jpeg");
+    final image = factory.createImage(
+      size: window.size,
+      filePath: "pixelprompt.jpeg",
+    );
     window.drawImage(position: Position.zero, image: image);
   } else {
     window.drawImage(position: Position(offset, 0), image: marioImage);

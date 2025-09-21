@@ -33,15 +33,15 @@ class _TerminalCell {
   bool calculateDifference() {
     assert(changed);
     bool diff = false;
-    if(newFg != null) {
-      if(newFg != fg) {
+    if (newFg != null) {
+      if (newFg != fg) {
         diff = true;
         fg = newFg!;
       }
       newFg = null;
     }
-    if(newBg != null) {
-      if(newBg != bg) {
+    if (newBg != null) {
+      if (newBg != bg) {
         diff = true;
         bg = newBg!;
       }

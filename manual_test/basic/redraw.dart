@@ -27,8 +27,8 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
                 style: TerminalForegroundStyle(
                   textDecorations: TextDecorationSet.underline,
                   color: i != 0 || j != 0
-                  ? BasicTerminalColor.green
-                  : BrightTerminalColor.yellow,
+                      ? BasicTerminalColor.green
+                      : BrightTerminalColor.yellow,
                 ),
                 codePoint: (codePoint % 26) + 65,
               ),

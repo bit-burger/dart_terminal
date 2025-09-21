@@ -28,7 +28,7 @@ class PosixTerminalSizeTracker extends TerminalSizeTracker {
   @override
   Size get currentSize => _currentSize;
 
-  StreamSubscription? _sigwinchSub;
+  StreamSubscription<dynamic>? _sigwinchSub;
 
   @override
   void startTracking() {
