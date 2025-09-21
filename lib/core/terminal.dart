@@ -215,7 +215,24 @@ class DefaultTerminalListener implements TerminalListener {
 
 class TerminalNotSupportedException extends Error {}
 
-enum TerminalCapability {
+enum CapabilitySupport implements Comparable<CapabilitySupport> {
+  /// if a capability is very likely to be unsupported
+  unsupported,
+
+  /// if there is no information on if a capability is supported or not
+  unknown,
+
+  /// features that might work
+  assumed,
+
+  /// features that will work with high degree of reliability
+  supported;
+
+  @override
+  int compareTo(CapabilitySupport other) => index.compareTo(other.index);
+}
+
+enum Capability {
   /// Support for [BasicTerminalColor]
   basicColors,
 
@@ -228,27 +245,46 @@ enum TerminalCapability {
   /// Support for [TerminalListener.mouseEvent]
   mouse,
 
-  /// Support for at least [TextDecorationSet.slowBlink]
-  /// and possibly [TextDecorationSet.fastBlink]
-  textBlink,
+  /// Support for setting [CursorState.blinking] to false
+  cursorBlinkingDisable,
 
   /// Support for [TextDecorationSet.intense]
-  intense,
-
-  /// Support for [TextDecorationSet.faint]
-  faint,
+  intenseTextDecoration,
 
   /// Support for [TextDecorationSet.italic]
-  italic,
+  italicTextDecoration,
 
   /// Support for [TextDecorationSet.underline]
-  underline,
+  underlineTextDecoration,
 
   /// Support for [TextDecorationSet.doubleUnderline]
-  doubleUnderline,
+  doubleUnderlineTextDecoration,
 
   /// Support for [TextDecorationSet.crossedOut]
-  crossedOut,
+  crossedOutTextDecoration,
+
+  /// Support for [TextDecorationSet.faint]
+  faintTextDecoration,
+
+  /// Support for at least [TextDecorationSet.slowBlink]
+  /// and possibly [TextDecorationSet.fastBlink]
+  textBlinkTextDecoration,
+}
+
+final class CursorState {
+  final Position position;
+  final bool blinking;
+
+  CursorState({required this.position, this.blinking = true});
+
+  @override
+  bool operator ==(Object other) =>
+      other is CursorState &&
+      position == other.position &&
+      blinking == other.blinking;
+
+  @override
+  int get hashCode => Object.hash(position.hashCode, blinking);
 }
 
 abstract class TerminalWindow implements TerminalCanvas {
@@ -258,7 +294,8 @@ abstract class TerminalWindow implements TerminalCanvas {
 
   TerminalWindow({required this.listener});
 
-  Position? get cursorPosition;
+  CursorState? get cursor;
+  set cursor(CursorState state);
 
   // also handle sigint etc...
   // raw scroll mode and stuff like that
@@ -283,10 +320,9 @@ abstract class TerminalWindow implements TerminalCanvas {
     _isDestroyed = true;
   }
 
-  bool supportsCapability(TerminalCapability capability);
+  CapabilitySupport checkSupport(Capability capability);
 
-  void setCursor([Position? position]);
-  void setTerminalSize(Size size);
+  void trySetTerminalSize(Size size);
   void setTerminalTitle(String title);
   void bell();
   void drawBackground({TerminalColor color});

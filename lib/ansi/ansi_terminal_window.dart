@@ -86,15 +86,15 @@ class AnsiTerminalWindow extends TerminalWindow {
       AnsiTerminalInputProcessor.waiting();
   late final AnsiTerminalScreen _screen;
 
-  late final Set<TerminalCapability> _capabilities;
-
   final List<StreamSubscription> _subscriptions = [];
   Completer<Position>? _cursorPositionCompleter;
 
   @override
-  Position? get cursorPosition => _cursorHidden ? null : _cursorPosition;
-  bool _cursorHidden = false;
-  late Position _cursorPosition;
+  CursorState? get cursor => _cursorPosition == null
+      ? null
+      : CursorState(position: _cursorPosition!, blinking: _cursorBlinking);
+  bool _cursorBlinking = true;
+  late Position? _cursorPosition;
 
   @override
   Size get size => sizeTracker.currentSize;
@@ -121,6 +121,7 @@ class AnsiTerminalWindow extends TerminalWindow {
   @override
   Future<void> attach() async {
     await super.attach();
+    await capabilitiesDetector.detect();
     controller
       ..saveCursorPosition()
       ..changeScreenMode(alternateBuffer: true)
@@ -157,6 +158,8 @@ class AnsiTerminalWindow extends TerminalWindow {
     controller
       ..setInputMode(false)
       ..changeScreenMode(alternateBuffer: false)
+      ..changeCursorVisibility(hiding: false)
+      ..changeCursorBlinking(blinking: true)
       ..restoreCursorPosition()
       ..changeFocusTrackingMode(enable: false)
       ..changeMouseTrackingMode(enable: false)
@@ -192,21 +195,32 @@ class AnsiTerminalWindow extends TerminalWindow {
   void bell() => controller.bell();
 
   @override
-  void setTerminalSize(Size size) =>
+  void trySetTerminalSize(Size size) =>
       controller.changeSize(size.width, size.height);
 
   @override
   void setTerminalTitle(String title) => controller.changeTerminalTitle(title);
 
   @override
-  void setCursor([Position? position]) {
-    if ((position == null) != _cursorHidden) {
-      _cursorHidden = position == null;
-      controller.changeCursorVisibility(hiding: _cursorHidden);
-    }
-    if (position != null && position != _cursorPosition) {
-      _cursorPosition = position;
-      controller.setCursorPosition(position.x + 1, position.y);
+  set cursor(CursorState? cursor) {
+    if (cursor != null) {
+      if (cursor.blinking != _cursorBlinking) {
+        controller.changeCursorBlinking(blinking: cursor.blinking);
+        _cursorBlinking = cursor.blinking;
+      }
+      if (cursor.position != _cursorPosition) {
+        if (_cursorPosition == null) {
+          controller.changeCursorVisibility(hiding: false);
+        }
+        controller.setCursorPosition(
+          cursor.position.x + 1,
+          cursor.position.y + 1,
+        );
+        _cursorPosition = cursor.position;
+      }
+    } else if (_cursorPosition != null) {
+      controller.changeCursorVisibility(hiding: true);
+      _cursorPosition = null;
     }
   }
 
@@ -287,15 +301,25 @@ class AnsiTerminalWindow extends TerminalWindow {
   @override
   void updateScreen() {
     final cursorMoved = _screen.updateScreen();
-    if (cursorMoved && cursorPosition != null) {
+    if (cursorMoved && cursor != null) {
       controller.setCursorPosition(
-        cursorPosition!.x + 1,
-        cursorPosition!.y + 1,
+        cursor!.position.x + 1,
+        cursor!.position.y + 1,
       );
     }
   }
 
   @override
-  bool supportsCapability(TerminalCapability capability) =>
-      _capabilities.contains(capability);
+  CapabilitySupport checkSupport(Capability capability) {
+    if (capabilitiesDetector.supportedCaps.contains(capability)) {
+      return CapabilitySupport.supported;
+    }
+    if (capabilitiesDetector.assumedCaps.contains(capability)) {
+      return CapabilitySupport.assumed;
+    }
+    if (capabilitiesDetector.unsupportedCaps.contains(capability)) {
+      return CapabilitySupport.unsupported;
+    }
+    return CapabilitySupport.unknown;
+  }
 }

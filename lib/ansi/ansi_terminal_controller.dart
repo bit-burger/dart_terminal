@@ -11,6 +11,14 @@ class AnsiTerminalController {
     stdout.write(ansi_codes.cursorTo(x, y));
   }
 
+  void changeCursorBlinking({required bool blinking}) {
+    if(blinking) {
+      stdout.write(ansi_codes.enableCursorBlink);
+    } else {
+      stdout.write(ansi_codes.disableCursorBlink);
+    }
+  }
+
   void queryCursorPosition() {
     stdout.write(ansi_codes.cursorPositionQuery);
   }

@@ -38,6 +38,8 @@ const String restoreCursorPositionSCO = '\x1B[u';
 /// Cursor Visibility
 const String hideCursor = '\x1B[?25l';
 const String showCursor = '\x1B[?25h';
+const String enableCursorBlink = '\x1B[?12l';
+const String disableCursorBlink = '\x1B[?12h';
 
 /// Change Window
 String changeWindowDimension(int width, int height) =>
