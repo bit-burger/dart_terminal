@@ -10,9 +10,9 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
       exit(0);
     }
     if (controlCharacter == ControlCharacter.arrowLeft) {
-      offset--;
-    } else if (controlCharacter == ControlCharacter.arrowRight) {
       offset++;
+    } else if (controlCharacter == ControlCharacter.arrowRight) {
+      offset--;
     } else {
       monaLisa = !monaLisa;
     }
