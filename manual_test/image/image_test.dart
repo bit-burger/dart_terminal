@@ -43,6 +43,7 @@ void paint() {
     );
     viewport.drawImage(position: Position.zero, image: image);
   } else {
+    viewport.drawBackground();
     viewport.drawImage(position: Position(offset, 0), image: marioImage);
   }
   viewport.updateScreen();
