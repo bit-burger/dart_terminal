@@ -1,5 +1,8 @@
+// Dart imports:
 import 'dart:async';
 import 'dart:io' as io;
+
+// Project imports:
 import 'package:dart_tui/core.dart';
 
 /// States for the terminal input parser.
@@ -30,6 +33,7 @@ class FocusEvent {
   /// Whether the terminal window is currently focused
   final bool isFocused;
 
+  // ignore: public_member_api_docs
   FocusEvent({required this.isFocused});
 }
 
@@ -40,6 +44,7 @@ class CursorPositionEvent {
   /// The current position of the cursor
   final Position position;
 
+  // ignore: public_member_api_docs
   CursorPositionEvent(this.position);
 }
 

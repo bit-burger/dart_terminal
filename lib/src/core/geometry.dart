@@ -1,3 +1,4 @@
+// Dart imports:
 import 'dart:math' as math;
 
 /// Represents a two-dimensional size with integer width and height.
@@ -12,6 +13,9 @@ extension type const Size._(({int width, int height}) _) {
 
   /// The vertical extent of this size.
   int get height => _.height;
+
+  /// The area covered by this size ([width] * [height]).
+  int get area => width * height;
 }
 
 /// Represents a 2D vector offset with integer components.
@@ -58,6 +62,12 @@ extension type const Position._(({int x, int y}) _) {
 
   /// The vertical coordinate of this position.
   int get y => _.y;
+
+  /// Clamps this position within the bounds of the given rectangle [rect].
+  Position clamp(Rect rect) => Position(
+    math.max(rect.x1, math.min(x, rect.x2)),
+    math.max(rect.y1, math.min(y, rect.y2)),
+  );
 }
 
 /// Represents a rectangular area in the terminal.

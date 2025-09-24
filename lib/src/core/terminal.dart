@@ -1,30 +1,141 @@
+// Project imports:
 import 'geometry.dart';
 import 'graphics.dart';
 import 'style.dart';
+import 'util.dart';
 
-
-// TODO: rename file to terminal.dart
 /// Service for creating and managing terminal windows and associated objects.
 ///
 /// Provides an abstract interface for terminal operations, allowing for different
 /// implementations depending on the underlying platform or terminal capabilities.
 abstract class TerminalService {
-  /// Initializes the terminal service, .
-  Future<void> init();
+  /// Initializes the terminal service.
+  bool _isAttached = false;
+  bool _isDestroyed = false;
 
-  /// Creates a new terminal window with an optional event listener.
-  TerminalWindow createWindow({TerminalListener listener});
+  Future<void> attach() async {
+    if (_isDestroyed) {
+      throw StateError(
+        "TerminalWindow is already destroyed, cannot attach again.",
+      );
+    }
+    _isAttached = true;
+    logger._isActive = true;
+  }
 
-  /// Creates a terminal image with the specified properties.
-  ///
-  /// [size] determines the dimensions of the image.
-  /// [filePath] optionally specifies an image file to load.
-  /// [backgroundColor] sets the default background color.
+  // TODO: do not destroy but attach and unattach
+  Future<void> destroy() async {
+    if (_isDestroyed) {
+      throw StateError(
+        "TerminalWindow is already destroyed, cannot destroy again.",
+      );
+    }
+    if (!_isAttached) {
+      throw StateError("TerminalWindow has not been attached, cannot destroy.");
+    }
+    _isDestroyed = true;
+  }
+
+  TerminalListener? listener;
+
+  TerminalLogger get logger;
+  TerminalViewport get viewport;
+
+  void switchToLoggerMode() {
+    logger._isActive = true;
+    viewport._isActive = false;
+  }
+
+  void switchToViewPortMode() {
+    logger._isActive = false;
+    viewport._isActive = true;
+  }
+
   TerminalImage createImage({
     required Size size,
     String? filePath,
     TerminalColor? backgroundColor,
   });
+
+  /// Checks if a specific capability is supported by the terminal.
+  CapabilitySupport checkSupport(Capability capability);
+
+  /// Tries to set the terminal size, adjusting if necessary.
+  void trySetTerminalSize(Size size);
+
+  /// Sets the terminal window title.
+  void setTerminalTitle(String title);
+
+  /// Triggers the terminal bell (audible or visible alert).
+  void bell();
+}
+
+abstract class TerminalLogger {
+  bool get isActive => _isActive;
+  bool _isActive = false;
+
+  // TODO: remove from public api
+  TerminalService get service;
+
+  int get width;
+
+  void deleteLastLine(int count);
+
+  void log(
+    String text, {
+    TerminalForegroundStyle foregroundStyle,
+    TerminalColor backgroundColor,
+  });
+}
+
+/// Abstract class for terminal windows.
+///
+/// Represents a window in the terminal where content can be displayed.
+/// Supports features like cursor management, screen updating, and event handling.
+abstract class TerminalViewport implements TerminalCanvas {
+  bool get isActive => _isActive;
+  bool _isActive = false;
+
+  TerminalService get service;
+
+  CursorState? get cursor;
+  set cursor(CursorState state);
+
+  /// Draws the background of the terminal window.
+  void drawBackground({TerminalColor color, bool optimizeByClear = true});
+
+  @override
+  void drawBorderBox({
+    required Rect rect,
+    required BorderCharSet style,
+    TerminalColor color = const DefaultTerminalColor(),
+    BorderDrawIdentifier? drawId,
+  }) {
+    assert(rect.height > 1 && rect.width > 1, "Rect needs to be at least 2x2.");
+  }
+
+  @override
+  void drawBorderLine({
+    required Position from,
+    required Position to,
+    required BorderCharSet style,
+    TerminalColor color = const DefaultTerminalColor(),
+    BorderDrawIdentifier? drawId,
+  }) {
+    assert(
+      from.x == to.x || from.y == to.y,
+      "Points need to be either horizontally or vertically aligned.",
+    );
+    assert(from != to, "Points need to be different.");
+  }
+
+  void drawImage({
+    required covariant TerminalImage image,
+    required Position position,
+  });
+
+  /// Updates the terminal screen with any pending changes.
+  void updateScreen();
 }
 
 /// System signals that can be handled by the terminal application.
@@ -204,92 +315,22 @@ abstract interface class TerminalListener {
   void signal(AllowedSignal signal);
 
   /// Called for mouse events like clicks and movement.
+  /// (only available in viewport mode)
   void mouseEvent(MouseEvent event);
 
   /// Called when the terminal gains or loses focus.
   void focusChange(bool isFocused);
 
   /// Creates a delegate that forwards events to the provided handlers.
-  const factory TerminalListener.delegate({
-    void Function(ControlCharacter) controlCharacter,
-    void Function(bool) focusChange,
-    void Function(String) input,
-    void Function(MouseEvent) mouseEvent,
-    void Function(Size) screenResize,
-    void Function(AllowedSignal) signal,
-  }) = _LambdaTerminalListener;
-
-  /// Creates an empty terminal listener that ignores all events.
-  const factory TerminalListener.empty() = DefaultTerminalListener;
+  factory TerminalListener({
+    void Function(ControlCharacter) onControlCharacter,
+    void Function(bool) onFocusChange,
+    void Function(String) onInput,
+    void Function(MouseEvent) onMouseEvent,
+    void Function(Size) onScreenResize,
+    void Function(AllowedSignal) onSignal,
+  }) = LambdaTerminalListener;
 }
-
-class _LambdaTerminalListener implements TerminalListener {
-  final void Function(ControlCharacter) _controlCharacter;
-  final void Function(bool) _focusChange;
-  final void Function(String) _input;
-  final void Function(MouseEvent) _mouseEvent;
-  final void Function(Size) _screenResize;
-  final void Function(AllowedSignal) _signal;
-
-  static void _(_) {}
-
-  const _LambdaTerminalListener({
-    void Function(ControlCharacter) controlCharacter = _,
-    void Function(bool) focusChange = _,
-    void Function(String) input = _,
-    void Function(MouseEvent) mouseEvent = _,
-    void Function(Size) screenResize = _,
-    void Function(AllowedSignal) signal = _,
-  }) : _controlCharacter = controlCharacter,
-       _focusChange = focusChange,
-       _input = input,
-       _mouseEvent = mouseEvent,
-       _screenResize = screenResize,
-       _signal = signal;
-
-  @override
-  void controlCharacter(ControlCharacter controlCharacter) =>
-      _controlCharacter(controlCharacter);
-
-  @override
-  void focusChange(bool isFocused) => _focusChange(isFocused);
-
-  @override
-  void input(String s) => _input(s);
-
-  @override
-  void mouseEvent(MouseEvent event) => _mouseEvent(event);
-
-  @override
-  void screenResize(Size size) => _screenResize(size);
-
-  @override
-  void signal(AllowedSignal signal) => _signal(signal);
-}
-
-class DefaultTerminalListener implements TerminalListener {
-  const DefaultTerminalListener();
-
-  @override
-  void controlCharacter(ControlCharacter controlCharacter) {}
-
-  @override
-  void input(String s) {}
-
-  @override
-  void screenResize(Size size) {}
-
-  @override
-  void signal(AllowedSignal signal) {}
-
-  @override
-  void focusChange(bool isFocused) {}
-
-  @override
-  void mouseEvent(MouseEvent event) {}
-}
-
-class TerminalNotSupportedException extends Error {}
 
 /// Support levels for terminal capabilities.
 ///
@@ -325,6 +366,9 @@ enum Capability {
 
   /// Support for [RGBTerminalColor]
   trueColors,
+
+  /// If an alternate screen buffer is available or if for the viewport everything needs to be redrawn
+  alternateScreenBuffer,
 
   /// Support for [TerminalListener.mouseEvent]
   mouse,
@@ -372,69 +416,4 @@ final class CursorState {
 
   @override
   int get hashCode => Object.hash(position.hashCode, blinking);
-}
-
-/// Abstract class for terminal windows.
-///
-/// Represents a window in the terminal where content can be displayed.
-/// Supports features like cursor management, screen updating, and event handling.
-abstract class TerminalWindow implements TerminalCanvas {
-  final TerminalListener listener;
-  bool _isAttached = true;
-  bool _isDestroyed = false;
-
-  TerminalWindow({required this.listener});
-
-  CursorState? get cursor;
-  set cursor(CursorState state);
-
-  // also handle sigint etc...
-  // raw scroll mode and stuff like that
-  Future<void> attach() async {
-    if (_isDestroyed) {
-      throw StateError(
-        "TerminalWindow is already destroyed, cannot attach again.",
-      );
-    }
-    _isAttached = true;
-  }
-
-  Future<void> destroy() async {
-    if (_isDestroyed) {
-      throw StateError(
-        "TerminalWindow is already destroyed, cannot destroy again.",
-      );
-    }
-    if (!_isAttached) {
-      throw StateError("TerminalWindow has not been attached, cannot destroy.");
-    }
-    _isDestroyed = true;
-  }
-
-  /// Checks if a specific capability is supported by the terminal.
-  CapabilitySupport checkSupport(Capability capability);
-
-  /// Tries to set the terminal size, adjusting if necessary.
-  void trySetTerminalSize(Size size);
-
-  /// Sets the terminal window title.
-  void setTerminalTitle(String title);
-
-  /// Triggers the terminal bell (audible or visible alert).
-  void bell();
-
-  /// Draws the background of the terminal window.
-  void drawBackground({TerminalColor color});
-
-  /// Updates the terminal screen with any pending changes.
-  void updateScreen();
-}
-
-/// Abstract class for terminal canvases with clipping support.
-///
-/// Extends [TerminalCanvas] to add rectangular clipping regions,
-/// allowing for optimized redrawing of only a portion of the terminal.
-abstract class TerminalClipCanvas extends TerminalCanvas {
-  /// The current clipping rectangle, if any
-  Rect? clip;
 }

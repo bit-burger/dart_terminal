@@ -1,5 +1,10 @@
+// Dart imports:
 import 'dart:io';
+
+// Package imports:
 import 'package:image/image.dart' as img;
+
+// Project imports:
 import 'package:dart_tui/core.dart';
 
 /// Implementation of terminal images using native image processing.

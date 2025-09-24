@@ -6,12 +6,12 @@ List<String> buff = List.filled(1000, "", growable: true);
 
 void _print(String nexText) {
   buff.add(nexText);
-  window.drawBackground();
-  for (int i = 0; i < window.size.height; i++) {
+  viewport.drawBackground();
+  for (int i = 0; i < viewport.size.height; i++) {
     final text = buff[buff.length - i - 1];
-    window.drawText(text: text, position: Position(0, i));
+    viewport.drawText(text: text, position: Position(0, i));
   }
-  window.updateScreen();
+  viewport.updateScreen();
 }
 
 class ControlTerminalInputListener implements TerminalListener {
@@ -19,7 +19,7 @@ class ControlTerminalInputListener implements TerminalListener {
   void controlCharacter(ControlCharacter controlCharacter) async {
     _print("$controlCharacter;");
     if (controlCharacter == ControlCharacter.ctrlZ) {
-      await window.destroy();
+      await service.destroy();
       exit(0);
     }
   }
@@ -41,7 +41,11 @@ class ControlTerminalInputListener implements TerminalListener {
 
   @override
   void focusChange(bool isFocused) {
-    _print("focuschange($isFocused);");
+    if (isFocused) {
+      _print("focused();");
+    } else {
+      _print("unfocused();");
+    }
   }
 
   @override
@@ -62,11 +66,12 @@ class ControlTerminalInputListener implements TerminalListener {
   }
 }
 
-final window = AnsiTerminalWindow.agnostic(
-  listener: ControlTerminalInputListener(),
-);
+final service = AnsiTerminalService.agnostic()
+  ..listener = ControlTerminalInputListener();
+final viewport = service.viewport;
 
 void main() async {
-  await window.attach();
+  await service.attach();
+  service.switchToViewPortMode();
   _print("start;");
 }

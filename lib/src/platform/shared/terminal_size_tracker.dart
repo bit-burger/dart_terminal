@@ -1,6 +1,8 @@
+// Dart imports:
 import 'dart:async';
 import 'dart:io';
 
+// Project imports:
 import 'package:dart_tui/core.dart';
 
 // TODO: support intellij console

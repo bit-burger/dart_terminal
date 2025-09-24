@@ -6,7 +6,7 @@ class TextDecorationsListener extends DefaultTerminalListener {
   @override
   void controlCharacter(ControlCharacter c) async {
     if (c == ControlCharacter.ctrlZ) {
-      await window.destroy();
+      await service.destroy();
       exit(0);
     }
     if (c == ControlCharacter.ctrlA) {
@@ -29,8 +29,11 @@ class TextDecorationsListener extends DefaultTerminalListener {
   }
 }
 
-final window = AnsiTerminalWindow.agnostic(listener: TextDecorationsListener());
+final service = AnsiTerminalService.agnostic()
+  ..listener = TextDecorationsListener();
+final viewport = service.viewport;
 int style = 0;
+
 TextDecorationSet s(int encodedStyle) => TextDecorationSet(
   intense: encodedStyle & 1 != 0,
   faint: encodedStyle & 2 != 0,
@@ -43,7 +46,7 @@ TextDecorationSet s(int encodedStyle) => TextDecorationSet(
 );
 
 void paint() {
-  window.drawText(
+  viewport.drawText(
     text: "Press ctrl-A",
     style: TerminalForegroundStyle(
       textDecorations: s(style),
@@ -51,7 +54,7 @@ void paint() {
     ),
     position: Position(0, 0),
   );
-  window.drawText(
+  viewport.drawText(
     text: " or ctrl-S",
     style: TerminalForegroundStyle(
       textDecorations: s(~style),
@@ -59,10 +62,11 @@ void paint() {
     ),
     position: Position(12, 0),
   );
-  window.updateScreen();
+  viewport.updateScreen();
 }
 
 void main() async {
-  await window.attach();
+  await service.attach();
+  service.switchToViewPortMode();
   paint();
 }

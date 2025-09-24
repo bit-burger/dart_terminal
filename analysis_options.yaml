@@ -2,9 +2,9 @@ include: package:very_good_analysis/analysis_options.yaml
 
 linter:
   rules:
-    public_member_api_docs: true
+    public_member_api_docs: false # TODO: change to true
+    avoid_positional_boolean_parameters: false # TODO: change to true
     library_names: true
-    avoid_positional_boolean_parameters: true
     library_prefixes:
       'dart:io': io
       'dart:async': async

@@ -1,8 +1,4 @@
-import 'dart:io' show stdout;
-
-import 'package:dart_tui/core.dart';
-import '../shared/native_terminal_image.dart';
-import 'ansi_escape_codes.dart' as ansi_codes;
+part of 'ansi_terminal_service.dart';
 
 const int _leftBorderMask = 1 << 63;
 const int _topBorderMask = 1 << 62;
@@ -89,28 +85,45 @@ class _TerminalCell {
 List<_TerminalCell> _rowGen(int length) =>
     List.generate(length, (_) => _TerminalCell());
 
-class AnsiTerminalScreen {
-  final List<List<_TerminalCell>> _screenBuffer;
-  final List<bool> _changeList;
+class _AnsiTerminalViewport extends TerminalViewport {
+  @override
+  final AnsiTerminalService service;
+  AnsiTerminalController get _controller => service._controller;
+
+  final List<List<_TerminalCell>> _screenBuffer = [];
+  final List<bool> _changeList = [];
+  Size _dataSize = Size(0, 0);
   TerminalColor? _backgroundFill;
 
-  AnsiTerminalScreen(Size size)
-    : _size = size,
-      _dataSize = size,
-      _screenBuffer = List.generate(size.height, (_) => _rowGen(size.width)),
-      _changeList = List.filled(size.height, false, growable: true);
-  Size _size;
-  Size _dataSize;
+  _AnsiTerminalViewport._(this.service);
 
-  Size get size => _size;
+  @override
+  Size get size => service._sizeTracker.currentSize;
 
-  void resize(Size size) {
-    if (_size.height < size.height) {
+  bool _initialActivation = true;
+  void _onActivationEvent() {
+    if (_initialActivation) {
+      _initialActivation = false;
+      _controller.setCursorPosition(1, 1);
+    }
+    io.stdout.write(ansi_codes.resetAllFormats);
+    currentFg = TerminalForegroundStyle();
+    currentBg = DefaultTerminalColor();
+    _onResizeEvent();
+  }
+
+  void _onResizeEvent() {
+    _resizeBuffer();
+    drawBackground(optimizeByClear: true);
+    updateScreen();
+    _constrainCursorPositionBySize();
+  }
+
+  void _resizeBuffer() {
+    if (_dataSize.height < size.height) {
       _changeList.addAll(
-        List.generate(size.height - _size.height, (_) => false),
+        List.generate(size.height - _dataSize.height, (_) => false),
       );
-    } else {
-      _changeList.length = size.height;
     }
     if (_dataSize.width < size.width) {
       for (final row in _screenBuffer) {
@@ -133,10 +146,58 @@ class AnsiTerminalScreen {
               .map((r) => r.length == _dataSize.width)
               .reduce((a, b) => a && b),
     );
-    _size = size;
   }
 
-  void fillBackground([TerminalColor color = const DefaultTerminalColor()]) {
+  @override
+  CursorState? get cursor => _cursorPosition == null
+      ? null
+      : CursorState(position: _cursorPosition!, blinking: _cursorBlinking);
+  bool _cursorBlinking = true;
+  Position? _cursorPosition = Position.zero;
+
+  @override
+  set cursor(CursorState? cursor) {
+    if (cursor != null) {
+      if (cursor.blinking != _cursorBlinking) {
+        service._controller.changeCursorBlinking(blinking: cursor.blinking);
+        _cursorBlinking = cursor.blinking;
+      }
+      if (cursor.position != _cursorPosition) {
+        if (_cursorPosition == null) {
+          service._controller.changeCursorVisibility(hiding: false);
+        }
+        _controller.setCursorPosition(
+          cursor.position.x + 1,
+          cursor.position.y + 1,
+        );
+        _cursorPosition = cursor.position;
+      }
+      _constrainCursorPositionBySize();
+    } else if (_cursorPosition != null) {
+      _controller.changeCursorVisibility(hiding: true);
+      _cursorPosition = null;
+    }
+  }
+
+  void _constrainCursorPositionBySize() {
+    if (_cursorPosition != null) {
+      _cursorPosition = _cursorPosition!.clamp(Position.zero & size);
+    }
+  }
+
+  @override
+  void drawBackground({
+    TerminalColor color = const DefaultTerminalColor(),
+    bool optimizeByClear = true,
+  }) {
+    if (optimizeByClear) {
+      _fillBackgroundOptimizedByClear(color);
+    } else {
+      drawRect(background: color, rect: Position.zero & size);
+    }
+  }
+
+  void _fillBackgroundOptimizedByClear(TerminalColor color) {
     _backgroundFill = color;
     for (int j = 0; j < size.height; j++) {
       _changeList[j] = false;
@@ -146,70 +207,34 @@ class AnsiTerminalScreen {
     }
   }
 
-  void drawPoint(
-    Position position,
-    TerminalColor? backgroundColor,
-    TerminalForeground? foreground,
-  ) {
-    if (!(Position.zero & _size).contains(position)) return;
-    _changeList[position.y] = true;
-    _screenBuffer[position.y][position.x].draw(foreground, backgroundColor);
+  @override
+  void drawBorderBox({
+    required Rect rect,
+    required BorderCharSet style,
+    TerminalColor color = const DefaultTerminalColor(),
+    BorderDrawIdentifier? drawId,
+  }) {
+    super.drawBorderBox(rect: rect, color: color, drawId: drawId, style: style);
+    drawId ??= BorderDrawIdentifier();
+
+    line(Position f, Position t, BorderDrawIdentifier id) =>
+        drawBorderLine(from: f, to: t, style: style, color: color, drawId: id);
+
+    line(rect.topLeft, rect.topRight, drawId);
+    line(rect.topRight, rect.bottomRight, drawId);
+    line(rect.bottomLeft, rect.bottomRight, drawId);
+    line(rect.topLeft, rect.bottomLeft, drawId);
   }
 
-  void drawRect(
-    Rect rect,
-    TerminalColor? backgroundColor,
-    TerminalForeground? foreground,
-  ) {
-    rect = rect.clip(Position.zero & _size);
-    for (int y = rect.y1; y <= rect.y2; y++) {
-      _changeList[y] = true;
-      for (int x = rect.x1; x <= rect.x2; x++) {
-        _screenBuffer[y][x].draw(foreground, backgroundColor);
-      }
-    }
-  }
-
-  void drawText(
-    String text,
-    TerminalForegroundStyle? style,
-    Position position,
-  ) {
-    _changeList[position.y] = true;
-    for (int i = 0; i < text.length; i++) {
-      int codepoint = text.codeUnitAt(i);
-      final charPosition = Position(position.x + i, position.y);
-      final foreground = TerminalForeground(
-        style: style ?? TerminalForegroundStyle(),
-        codePoint: codepoint,
-      );
-
-      if (!(Position.zero & size).contains(charPosition)) continue;
-      if (codepoint < 32 || codepoint == 127) continue;
-
-      _screenBuffer[charPosition.y][charPosition.x].draw(foreground, null);
-    }
-  }
-
-  void drawBorderBox(
-    Rect rect,
-    BorderCharSet style,
-    TerminalColor color,
-    BorderDrawIdentifier drawId,
-  ) {
-    drawBorderLine(rect.topLeft, rect.topRight, style, color, drawId);
-    drawBorderLine(rect.topRight, rect.bottomRight, style, color, drawId);
-    drawBorderLine(rect.bottomLeft, rect.bottomRight, style, color, drawId);
-    drawBorderLine(rect.topLeft, rect.bottomLeft, style, color, drawId);
-  }
-
-  void drawBorderLine(
-    Position from,
-    Position to,
-    BorderCharSet style,
-    TerminalColor color,
-    BorderDrawIdentifier drawId,
-  ) {
+  @override
+  void drawBorderLine({
+    required Position from,
+    required Position to,
+    required BorderCharSet style,
+    TerminalColor color = const DefaultTerminalColor(),
+    BorderDrawIdentifier? drawId,
+  }) {
+    drawId ??= BorderDrawIdentifier();
     if (from.x == to.x) {
       for (int y = from.y; y <= to.y; y++) {
         _changeList[y] = true;
@@ -241,7 +266,11 @@ class AnsiTerminalScreen {
     }
   }
 
-  void drawImage(Position position, NativeTerminalImage image) {
+  @override
+  void drawImage({
+    required Position position,
+    required NativeTerminalImage image,
+  }) {
     final clip = (Position.zero & size).clip(position & image.size);
     for (int y = clip.y1; y <= clip.y2; y++) {
       _changeList[y] = true;
@@ -252,23 +281,65 @@ class AnsiTerminalScreen {
     }
   }
 
+  @override
+  void drawPoint({
+    required Position position,
+    TerminalColor? background,
+    TerminalForeground? foreground,
+  }) {
+    if (!(Position.zero & size).contains(position)) return;
+    _changeList[position.y] = true;
+    _screenBuffer[position.y][position.x].draw(foreground, background);
+  }
+
+  @override
+  void drawRect({
+    required Rect rect,
+    TerminalColor? background,
+    TerminalForeground? foreground,
+  }) {
+    rect = rect.clip(Position.zero & size);
+    for (int y = rect.y1; y <= rect.y2; y++) {
+      _changeList[y] = true;
+      for (int x = rect.x1; x <= rect.x2; x++) {
+        _screenBuffer[y][x].draw(foreground, background);
+      }
+    }
+  }
+
+  @override
+  void drawText({
+    required String text,
+    required Position position,
+    TerminalForegroundStyle? style,
+  }) {
+    _changeList[position.y] = true;
+    for (int i = 0; i < text.length; i++) {
+      int codepoint = text.codeUnitAt(i);
+      final charPosition = Position(position.x + i, position.y);
+      final foreground = TerminalForeground(
+        style: style ?? TerminalForegroundStyle(),
+        codePoint: codepoint,
+      );
+
+      if (!(Position.zero & size).contains(charPosition)) continue;
+      if (codepoint < 32 || codepoint == 127) continue;
+
+      _screenBuffer[charPosition.y][charPosition.x].draw(foreground, null);
+    }
+  }
+
   final StringBuffer _redrawBuff = StringBuffer();
   late TerminalForegroundStyle currentFg;
   late TerminalColor currentBg;
 
-  void initScreen() {
-    _redrawBuff.write(ansi_codes.resetAllFormats);
-    _redrawBuff.write(ansi_codes.eraseEntireScreen);
-    currentFg = TerminalForegroundStyle();
-    currentBg = DefaultTerminalColor();
-  }
-
   /// returns if cursor has been moved
   // more optimizations possible
   // (e.g. only write x coordinate if moving horizontally)
-  bool updateScreen() {
+  @override
+  void updateScreen() {
     if (_backgroundFill != null) {
-      _transition(currentFg, _backgroundFill!);
+      _transition(TerminalForegroundStyle(), _backgroundFill!);
       _redrawBuff.write(ansi_codes.eraseEntireScreen);
       _backgroundFill = null;
     }
@@ -293,9 +364,14 @@ class AnsiTerminalScreen {
         }
       }
     }
-    stdout.write(_redrawBuff.toString());
+    io.stdout.write(_redrawBuff.toString());
     _redrawBuff.clear();
-    return cursorMoved;
+    if (cursorMoved && _cursorPosition != null) {
+      _controller.setCursorPosition(
+        _cursorPosition!.x + 1,
+        _cursorPosition!.y + 1,
+      );
+    }
   }
 
   bool _firstParameter = true;

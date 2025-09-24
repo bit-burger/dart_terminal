@@ -6,7 +6,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   @override
   void controlCharacter(ControlCharacter controlCharacter) async {
     if (controlCharacter == ControlCharacter.ctrlZ) {
-      await window.destroy();
+      await service.destroy();
       exit(0);
     }
   }
@@ -21,7 +21,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
         codePoint += x + y;
         for (int i = -10; i <= 10; i++) {
           for (int j = -10; j <= 10; j++) {
-            window.drawPoint(
+            viewport.drawPoint(
               position: Position(pos.x + i, pos.y + j),
               foreground: TerminalForeground(
                 style: TerminalForegroundStyle(
@@ -46,21 +46,22 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
         motionPos = pos;
     }
     if (motionPos != null) {
-      window.drawPoint(
+      viewport.drawPoint(
         position: motionPos,
         background: isPressed
             ? BasicTerminalColor.red
             : BrightTerminalColor.red,
       );
     }
-    window.updateScreen();
+    viewport.updateScreen();
   }
 }
 
-final window = AnsiTerminalWindow.agnostic(
-  listener: ControlTerminalInputListener(),
-);
+final service = AnsiTerminalService.agnostic()
+  ..listener = ControlTerminalInputListener();
+final viewport = service.viewport;
 
 void main() async {
-  await window.attach();
+  await service.attach();
+  service.switchToViewPortMode();
 }

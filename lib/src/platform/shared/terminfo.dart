@@ -1,3 +1,4 @@
+// Dart imports:
 import 'dart:io' as io;
 
 /// Representation of terminal capabilities as defined in terminfo.

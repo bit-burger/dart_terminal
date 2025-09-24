@@ -3,37 +3,37 @@ import 'dart:io';
 
 import 'package:dart_tui/ansi.dart';
 
-class ColorListener extends DefaultTerminalListener {
-  @override
-  void controlCharacter(ControlCharacter c) async {
-    if (c == ControlCharacter.ctrlZ) {
-      await window.destroy();
-      exit(0);
-    }
-  }
-
-  @override
-  void screenResize(Size size) {
-    paint();
-  }
-}
-
-final window = AnsiTerminalWindow.agnostic(listener: ColorListener());
-int plus = 0;
-
-void paint() {
-  for (int j = 0; j < window.size.height; j++) {
-    for (int i = 0; i < window.size.width; i++) {
-      final color = XTermTerminalColor.raw((plus + i + j) % 256);
-      window.drawPoint(position: Position(i, j), background: color);
-    }
-  }
-  window.updateScreen();
-}
-
 void main() async {
-  await window.attach();
-  window.cursor = null;
+  int plus = 0;
+
+  final terminalService = AnsiTerminalService.agnostic();
+  void paint() {
+    for (int j = 0; j < terminalService.viewport.size.height; j++) {
+      for (int i = 0; i < terminalService.viewport.size.width; i++) {
+        final color = XTermTerminalColor.raw((plus + i + j) % 256);
+        terminalService.viewport.drawPoint(
+          position: Position(i, j),
+          background: color,
+        );
+      }
+    }
+    terminalService.viewport.updateScreen();
+  }
+
+  terminalService.listener = TerminalListener(
+    onControlCharacter: (c) async {
+      if ([ControlCharacter.ctrlC, ControlCharacter.ctrlZ].contains(c)) {
+        await terminalService.destroy();
+        exit(0);
+      }
+    },
+    onScreenResize: (_) {
+      paint();
+    },
+  );
+  await terminalService.attach();
+  terminalService.switchToViewPortMode();
+
   paint();
   Timer.periodic(Duration(milliseconds: 1000 ~/ 60), (_) {
     plus += 2;

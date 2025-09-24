@@ -1,3 +1,4 @@
+// Project imports:
 import 'geometry.dart';
 import 'style.dart';
 
@@ -76,25 +77,25 @@ abstract class TerminalCanvas {
 
   /// Draws a box border around or within the specified rectangle.
   ///
-  /// Uses [borderStyle] to determine the border characters and [foregroundColor]
-  /// for the border color. The [drawIdentifier] helps manage border intersections.
+  /// Uses [style] to determine the border characters and [color]
+  /// for the border color. The [drawId] helps manage border intersections.
   void drawBorderBox({
     required Rect rect,
-    required BorderCharSet borderStyle,
-    TerminalColor foregroundColor,
-    BorderDrawIdentifier drawIdentifier,
+    required BorderCharSet style,
+    TerminalColor color,
+    BorderDrawIdentifier drawId,
   });
 
   /// Draws a border line between two points.
   ///
-  /// The line is drawn from [from] to [to] using the specified [borderStyle]
-  /// and [foregroundColor]. The [drawIdentifier] helps manage line intersections.
+  /// The line is drawn from [from] to [to] using the specified [style]
+  /// and [color]. The [drawId] helps manage line intersections.
   void drawBorderLine({
     required Position from,
     required Position to,
-    required BorderCharSet borderStyle,
-    TerminalColor foregroundColor,
-    BorderDrawIdentifier drawIdentifier,
+    required BorderCharSet style,
+    TerminalColor color,
+    BorderDrawIdentifier drawId,
   });
 
   /// Composites a terminal image onto the canvas.
@@ -104,4 +105,7 @@ abstract class TerminalCanvas {
     required Position position,
     required covariant TerminalImage image,
   });
+
+  /// Fills the complete background with [color] or if none is provided erases it.
+  void drawBackground({TerminalColor color});
 }

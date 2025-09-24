@@ -6,7 +6,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   @override
   void controlCharacter(ControlCharacter controlCharacter) async {
     if (controlCharacter == ControlCharacter.ctrlZ) {
-      await window.destroy();
+      await service.destroy();
       exit(0);
     }
     if (controlCharacter == ControlCharacter.arrowLeft) {
@@ -25,9 +25,10 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   }
 }
 
-final factory = AnsiTerminalService.agnostic();
-final window = factory.createWindow(listener: ControlTerminalInputListener());
-final marioImage = factory.createImage(
+final service = AnsiTerminalService.agnostic()
+  ..listener = ControlTerminalInputListener();
+final viewport = service.viewport;
+final marioImage = service.createImage(
   size: Size(1200, 72),
   filePath: "mario_background.png",
 );
@@ -36,18 +37,19 @@ bool monaLisa = true;
 
 void paint() {
   if (monaLisa) {
-    final image = factory.createImage(
-      size: window.size,
-      filePath: "pixelprompt.jpeg",
+    final image = service.createImage(
+      size: viewport.size,
+      filePath: "mona_lisa.jpeg",
     );
-    window.drawImage(position: Position.zero, image: image);
+    viewport.drawImage(position: Position.zero, image: image);
   } else {
-    window.drawImage(position: Position(offset, 0), image: marioImage);
+    viewport.drawImage(position: Position(offset, 0), image: marioImage);
   }
-  window.updateScreen();
+  viewport.updateScreen();
 }
 
 void main() async {
-  await window.attach();
+  await service.attach();
+  service.switchToViewPortMode();
   paint();
 }

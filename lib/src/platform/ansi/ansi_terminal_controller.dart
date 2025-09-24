@@ -1,5 +1,10 @@
+// Dart imports:
 import 'dart:io' as io;
+
+// Package imports:
 import 'package:dart_console/src/ffi/termlib.dart' as console;
+
+// Project imports:
 import 'ansi_escape_codes.dart' as ansi_codes;
 
 /// Controls terminal behavior using ANSI escape sequences.

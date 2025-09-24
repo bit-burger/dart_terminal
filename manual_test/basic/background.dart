@@ -1,25 +1,21 @@
-import 'dart:io';
-
 import 'package:dart_tui/ansi.dart';
 
-class ExitListener extends DefaultTerminalListener {
-  @override
-  void controlCharacter(ControlCharacter controlCharacter) async {
-    if (controlCharacter == ControlCharacter.ctrlZ) {
-      await window.destroy();
-      exit(0);
-    }
-  }
-}
-
-final window = AnsiTerminalWindow.agnostic(listener: ExitListener());
-
 void main() async {
-  await window.attach();
-  window.drawBackground(color: BasicTerminalColor.red);
-  window.drawText(
+  final terminalService = AnsiTerminalService.agnostic();
+  terminalService.listener = TerminalListener(
+    onControlCharacter: (c) async {
+      if ([ControlCharacter.ctrlC, ControlCharacter.ctrlZ].contains(c)) {
+        await terminalService.destroy();
+      }
+    },
+  );
+  await terminalService.attach();
+  terminalService.switchToViewPortMode();
+  final viewport = terminalService.viewport;
+  viewport.drawBackground(color: BasicTerminalColor.red);
+  viewport.drawText(
     text: "Resize to wipe everything.",
     position: Position(10, 10),
   );
-  window.updateScreen();
+  viewport.updateScreen();
 }
