@@ -114,7 +114,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
 
   void _onResizeEvent() {
     _resizeBuffer();
-    drawBackground(optimizeByClear: true);
+    drawColor(optimizeByClear: true);
     updateScreen();
     _constrainCursorPositionBySize();
   }
@@ -186,14 +186,18 @@ class _AnsiTerminalViewport extends TerminalViewport {
   }
 
   @override
-  void drawBackground({
+  void drawColor({
     TerminalColor color = const DefaultTerminalColor(),
     bool optimizeByClear = true,
   }) {
     if (optimizeByClear) {
       _fillBackgroundOptimizedByClear(color);
     } else {
-      drawRect(background: color, rect: Position.zero & size);
+      drawRect(
+        background: color,
+        foreground: TerminalForeground(),
+        rect: Position.zero & size,
+      );
     }
   }
 

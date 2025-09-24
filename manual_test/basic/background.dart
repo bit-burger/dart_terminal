@@ -12,7 +12,7 @@ void main() async {
   await terminalService.attach();
   terminalService.switchToViewPortMode();
   final viewport = terminalService.viewport;
-  viewport.drawBackground(color: BasicTerminalColor.red);
+  viewport.drawColor(color: BasicTerminalColor.red);
   viewport.drawText(
     text: "Resize to wipe everything.",
     position: Position(10, 10),

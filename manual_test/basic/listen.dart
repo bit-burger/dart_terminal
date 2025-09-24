@@ -6,7 +6,7 @@ List<String> buff = List.filled(1000, "", growable: true);
 
 void _print(String nexText) {
   buff.add(nexText);
-  viewport.drawBackground();
+  viewport.drawColor();
   for (int i = 0; i < viewport.size.height; i++) {
     final text = buff[buff.length - i - 1];
     viewport.drawText(text: text, position: Position(0, i));

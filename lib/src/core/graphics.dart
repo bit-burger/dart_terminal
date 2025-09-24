@@ -107,5 +107,5 @@ abstract class TerminalCanvas {
   });
 
   /// Fills the complete background with [color] or if none is provided erases it.
-  void drawBackground({TerminalColor color});
+  void drawColor({TerminalColor color});
 }

@@ -51,7 +51,7 @@ void paint() {
     );
     viewport.drawImage(position: Position.zero, image: image);
   } else {
-    viewport.drawBackground(optimizeByClear: false);
+    viewport.drawColor(optimizeByClear: false);
     viewport.drawImage(position: Position(offset, 0), image: marioImage);
   }
   viewport.updateScreen();
