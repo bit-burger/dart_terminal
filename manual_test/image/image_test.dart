@@ -20,6 +20,14 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   }
 
   @override
+  void mouseEvent(MouseEvent event) {
+    if (event is MouseScrollEvent) {
+      offset += event.xScroll;
+      paint();
+    }
+  }
+
+  @override
   void screenResize(Size size) {
     paint();
   }
@@ -43,7 +51,7 @@ void paint() {
     );
     viewport.drawImage(position: Position.zero, image: image);
   } else {
-    viewport.drawBackground();
+    viewport.drawBackground(optimizeByClear: false);
     viewport.drawImage(position: Position(offset, 0), image: marioImage);
   }
   viewport.updateScreen();
@@ -52,5 +60,13 @@ void paint() {
 void main() async {
   await service.attach();
   service.switchToViewPortMode();
+  viewport.cursor = null;
   paint();
+  viewport.drawText(
+    text:
+        "Press up/down arrow to cycle images, "
+        "press left/right or scroll horizontally in the mario image to move",
+    position: Position(10, 10),
+  );
+  viewport.updateScreen();
 }
