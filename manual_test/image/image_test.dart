@@ -6,7 +6,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
   @override
   void controlCharacter(ControlCharacter controlCharacter) async {
     if (controlCharacter == ControlCharacter.ctrlZ) {
-      await service.destroy();
+      await service.detach();
       exit(0);
     }
     if (controlCharacter == ControlCharacter.arrowLeft) {
@@ -59,7 +59,7 @@ void paint() {
 
 void main() async {
   await service.attach();
-  service.switchToViewPortMode();
+  service.viewPortMode();
   viewport.cursor = null;
   paint();
   viewport.drawText(

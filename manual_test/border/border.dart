@@ -6,7 +6,7 @@ class ExitListener extends DefaultTerminalListener {
   @override
   void controlCharacter(ControlCharacter controlCharacter) async {
     if (controlCharacter == ControlCharacter.ctrlZ) {
-      await service.destroy();
+      await service.detach();
       exit(0);
     }
   }
@@ -17,7 +17,7 @@ final viewport = service.viewport;
 
 void main() async {
   await service.attach();
-  service.switchToViewPortMode();
+  service.viewPortMode();
   final id = BorderDrawIdentifier();
   final style = BorderCharSet.rounded();
   viewport.drawBorderBox(

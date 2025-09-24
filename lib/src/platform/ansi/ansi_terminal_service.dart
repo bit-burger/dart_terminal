@@ -15,7 +15,6 @@ import 'ansi_escape_codes.dart' as ansi_codes;
 part 'ansi_terminal_logger.dart';
 part 'ansi_terminal_viewport.dart';
 
-// ignore: public_member_api_docs
 class AnsiTerminalService extends TerminalService {
   final TerminalCapabilitiesDetector _capabilitiesDetector;
   final TerminalSizeTracker _sizeTracker;
@@ -61,8 +60,8 @@ class AnsiTerminalService extends TerminalService {
   Future<void> attach() async {
     await _capabilitiesDetector.detect();
     _controller
-      ..saveCursorPosition()
-      ..changeFocusTrackingMode(enable: true);
+      ..changeFocusTrackingMode(enable: true)
+      ..setInputMode(true); // TODO: was before set at the end
     _inputProcessor
       ..startListening()
       ..listener = _onInputEvent;
@@ -76,34 +75,37 @@ class AnsiTerminalService extends TerminalService {
     _sizeTracker
       ..startTracking()
       ..listener = _onResizeEvent;
-    _controller.setInputMode(true);
     await super.attach();
   }
 
   @override
-  Future<void> destroy() async {
+  Future<void> detach() async {
+    final viewPortWasActive = viewport.isActive;
+    super.detach();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
+    _subscriptions.clear();
     _inputProcessor.stopListening();
     _sizeTracker.stopTracking();
     // TODO: perhaps clear alternative buffer?
+    if (viewPortWasActive) {
+      _controller
+        ..changeScreenMode(alternateBuffer: false)
+        ..changeCursorVisibility(hiding: false)
+        ..changeCursorBlinking(blinking: true);
+    }
     _controller
       ..setInputMode(false)
-      ..changeScreenMode(alternateBuffer: false)
-      ..changeCursorVisibility(hiding: false)
-      ..changeCursorBlinking(blinking: true)
-      ..restoreCursorPosition()
       ..changeFocusTrackingMode(enable: false)
       ..changeMouseTrackingMode(enable: false)
       ..changeLineWrappingMode(enable: true);
-    await super.destroy();
   }
 
   @override
-  void switchToLoggerMode() {
+  void loggerMode() {
     if (logger.isActive) return;
-    super.switchToLoggerMode();
+    super.loggerMode();
     _controller
       ..changeLineWrappingMode(enable: true)
       ..changeScreenMode(alternateBuffer: false)
@@ -111,9 +113,9 @@ class AnsiTerminalService extends TerminalService {
   }
 
   @override
-  void switchToViewPortMode() {
+  void viewPortMode() {
     if (viewport.isActive) return;
-    super.switchToViewPortMode();
+    super.viewPortMode();
     _controller
       ..changeLineWrappingMode(enable: false)
       ..changeScreenMode(alternateBuffer: true)

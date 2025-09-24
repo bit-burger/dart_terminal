@@ -19,7 +19,7 @@ class ControlTerminalInputListener implements TerminalListener {
   void controlCharacter(ControlCharacter controlCharacter) async {
     _print("$controlCharacter;");
     if (controlCharacter == ControlCharacter.ctrlZ) {
-      await service.destroy();
+      await service.detach();
       exit(0);
     }
   }
@@ -72,6 +72,6 @@ final viewport = service.viewport;
 
 void main() async {
   await service.attach();
-  service.switchToViewPortMode();
+  service.viewPortMode();
   _print("start;");
 }

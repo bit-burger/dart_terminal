@@ -6,7 +6,7 @@ class TextDecorationsListener extends DefaultTerminalListener {
   @override
   void controlCharacter(ControlCharacter c) async {
     if (c == ControlCharacter.ctrlZ) {
-      await service.destroy();
+      await service.detach();
       exit(0);
     }
     if (c == ControlCharacter.ctrlA) {
@@ -67,6 +67,6 @@ void paint() {
 
 void main() async {
   await service.attach();
-  service.switchToViewPortMode();
+  service.viewPortMode();
   paint();
 }

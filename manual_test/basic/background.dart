@@ -5,12 +5,12 @@ void main() async {
   terminalService.listener = TerminalListener(
     onControlCharacter: (c) async {
       if ([ControlCharacter.ctrlC, ControlCharacter.ctrlZ].contains(c)) {
-        await terminalService.destroy();
+        await terminalService.detach();
       }
     },
   );
   await terminalService.attach();
-  terminalService.switchToViewPortMode();
+  terminalService.viewPortMode();
   final viewport = terminalService.viewport;
   viewport.drawColor(color: BasicTerminalColor.red);
   viewport.drawText(

@@ -11,29 +11,18 @@ import 'util.dart';
 abstract class TerminalService {
   /// Initializes the terminal service.
   bool _isAttached = false;
-  bool _isDestroyed = false;
 
   Future<void> attach() async {
-    if (_isDestroyed) {
-      throw StateError(
-        "TerminalWindow is already destroyed, cannot attach again.",
-      );
-    }
+    assert(_isAttached, "TerminalWindow has already been attached.");
     _isAttached = true;
     logger._isActive = true;
   }
 
-  // TODO: do not destroy but attach and unattach
-  Future<void> destroy() async {
-    if (_isDestroyed) {
-      throw StateError(
-        "TerminalWindow is already destroyed, cannot destroy again.",
-      );
-    }
-    if (!_isAttached) {
-      throw StateError("TerminalWindow has not been attached, cannot destroy.");
-    }
-    _isDestroyed = true;
+  Future<void> detach() async {
+    assert(!_isAttached, "TerminalWindow has not been attached.");
+    _isAttached = false;
+    logger._isActive = false;
+    viewport._isActive = false;
   }
 
   TerminalListener? listener;
@@ -41,12 +30,12 @@ abstract class TerminalService {
   TerminalLogger get logger;
   TerminalViewport get viewport;
 
-  void switchToLoggerMode() {
+  void loggerMode() {
     logger._isActive = true;
     viewport._isActive = false;
   }
 
-  void switchToViewPortMode() {
+  void viewPortMode() {
     logger._isActive = false;
     viewport._isActive = true;
   }

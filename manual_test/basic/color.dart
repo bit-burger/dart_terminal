@@ -23,7 +23,7 @@ void main() async {
   terminalService.listener = TerminalListener(
     onControlCharacter: (c) async {
       if ([ControlCharacter.ctrlC, ControlCharacter.ctrlZ].contains(c)) {
-        await terminalService.destroy();
+        await terminalService.detach();
         exit(0);
       }
     },
@@ -32,7 +32,7 @@ void main() async {
     },
   );
   await terminalService.attach();
-  terminalService.switchToViewPortMode();
+  terminalService.viewPortMode();
 
   paint();
   Timer.periodic(Duration(milliseconds: 1000 ~/ 60), (_) {

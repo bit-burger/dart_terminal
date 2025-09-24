@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:dart_tui/core.dart';
 import 'terminfo.dart';
 
+// TODO: support alternateScreenBuffer
+
 /// Detects and tracks terminal capabilities.
 ///
 /// This system determines which features are supported by the current terminal
