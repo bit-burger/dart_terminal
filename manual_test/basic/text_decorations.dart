@@ -34,7 +34,7 @@ final service = AnsiTerminalService.agnostic()
 final viewport = service.viewport;
 int style = 0;
 
-TextDecorationSet s(int encodedStyle) => TextDecorationSet(
+TextEffects s(int encodedStyle) => TextEffects(
   intense: encodedStyle & 1 != 0,
   faint: encodedStyle & 2 != 0,
   italic: encodedStyle & 4 != 0,
@@ -48,18 +48,12 @@ TextDecorationSet s(int encodedStyle) => TextDecorationSet(
 void paint() {
   viewport.drawText(
     text: "Press ctrl-A",
-    style: TerminalForegroundStyle(
-      textDecorations: s(style),
-      color: BasicTerminalColor.red,
-    ),
+    style: ForegroundStyle(effects: s(style), color: Colors.red),
     position: Position(0, 0),
   );
   viewport.drawText(
     text: " or ctrl-S",
-    style: TerminalForegroundStyle(
-      textDecorations: s(~style),
-      color: BasicTerminalColor.red,
-    ),
+    style: ForegroundStyle(effects: s(~style), color: Colors.red),
     position: Position(12, 0),
   );
   viewport.updateScreen();

@@ -43,7 +43,7 @@ abstract class TerminalService {
   TerminalImage createImage({
     required Size size,
     String? filePath,
-    TerminalColor? backgroundColor,
+    Color? backgroundColor,
   });
 
   /// Checks if a specific capability is supported by the terminal.
@@ -72,8 +72,8 @@ abstract class TerminalLogger {
 
   void log(
     String text, {
-    TerminalForegroundStyle foregroundStyle,
-    TerminalColor backgroundColor,
+    ForegroundStyle foregroundStyle,
+    Color backgroundColor,
   });
 }
 
@@ -91,13 +91,13 @@ abstract class TerminalViewport implements TerminalCanvas {
   set cursor(CursorState state);
 
   /// Draws the background of the terminal window.
-  void drawColor({TerminalColor color, bool optimizeByClear = true});
+  void drawColor({Color color, bool optimizeByClear = true});
 
   @override
   void drawBorderBox({
     required Rect rect,
     required BorderCharSet style,
-    TerminalColor color = const DefaultTerminalColor(),
+    Color color = const Color.normal(),
     BorderDrawIdentifier? drawId,
   }) {
     assert(rect.height > 1 && rect.width > 1, "Rect needs to be at least 2x2.");
@@ -108,7 +108,7 @@ abstract class TerminalViewport implements TerminalCanvas {
     required Position from,
     required Position to,
     required BorderCharSet style,
-    TerminalColor color = const DefaultTerminalColor(),
+    Color color = const Color.normal(),
     BorderDrawIdentifier? drawId,
   }) {
     assert(
@@ -348,7 +348,10 @@ enum CapabilitySupport implements Comparable<CapabilitySupport> {
 /// supported by the terminal, such as color support and mouse event handling.
 enum Capability {
   /// Support for [BasicTerminalColor]
-  basicColors,
+  standardColors,
+
+  ///
+  ansiColors,
 
   /// Support for [XTermTerminalColor]
   extendedColors,
@@ -362,29 +365,35 @@ enum Capability {
   /// Support for [TerminalListener.mouseEvent]
   mouse,
 
+  // TODO: currently no support whatsoever => need new event
+  bracketedPaste,
+
+  // TODO: currently no support whatsoever
+  uft8,
+
   /// Support for setting [CursorState.blinking] to false
   cursorBlinkingDisable,
 
-  /// Support for [TextDecorationSet.intense]
+  /// Support for [TextEffects.intense]
   intenseTextDecoration,
 
-  /// Support for [TextDecorationSet.italic]
+  /// Support for [TextEffects.italic]
   italicTextDecoration,
 
-  /// Support for [TextDecorationSet.underline]
+  /// Support for [TextEffects.underline]
   underlineTextDecoration,
 
-  /// Support for [TextDecorationSet.doubleUnderline]
+  /// Support for [TextEffects.doubleUnderline]
   doubleUnderlineTextDecoration,
 
-  /// Support for [TextDecorationSet.crossedOut]
+  /// Support for [TextEffects.crossedOut]
   crossedOutTextDecoration,
 
-  /// Support for [TextDecorationSet.faint]
+  /// Support for [TextEffects.faint]
   faintTextDecoration,
 
-  /// Support for at least [TextDecorationSet.slowBlink]
-  /// and possibly [TextDecorationSet.fastBlink]
+  /// Support for at least [TextEffects.slowBlink]
+  /// and possibly [TextEffects.fastBlink]
   textBlinkTextDecoration,
 }
 

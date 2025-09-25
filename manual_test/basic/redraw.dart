@@ -23,12 +23,10 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
           for (int j = -10; j <= 10; j++) {
             viewport.drawPoint(
               position: Position(pos.x + i, pos.y + j),
-              foreground: TerminalForeground(
-                style: TerminalForegroundStyle(
-                  textDecorations: TextDecorationSet.underline,
-                  color: i != 0 || j != 0
-                      ? BasicTerminalColor.green
-                      : BrightTerminalColor.yellow,
+              foreground: Foreground(
+                style: ForegroundStyle(
+                  effects: TextEffects.underline,
+                  color: i != 0 || j != 0 ? Colors.green : Colors.yellow,
                 ),
                 codePoint: (codePoint % 26) + 65,
               ),
@@ -48,9 +46,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
     if (motionPos != null) {
       viewport.drawPoint(
         position: motionPos,
-        background: isPressed
-            ? BasicTerminalColor.red
-            : BrightTerminalColor.red,
+        background: isPressed ? Colors.red : Colors.brightRed,
       );
     }
     viewport.updateScreen();

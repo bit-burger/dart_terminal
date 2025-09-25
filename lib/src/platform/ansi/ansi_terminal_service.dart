@@ -6,6 +6,7 @@ import 'dart:io' as io;
 import 'package:dart_tui/core.dart';
 import 'package:dart_tui/src/platform/ansi/ansi_terminal_controller.dart';
 import 'package:dart_tui/src/platform/ansi/ansi_terminal_input_processor.dart';
+import '../../core/style.dart';
 import '../shared/native_terminal_image.dart';
 import '../shared/signals.dart';
 import '../shared/terminal_capabilities.dart';
@@ -58,6 +59,7 @@ class AnsiTerminalService extends TerminalService {
 
   @override
   Future<void> attach() async {
+    // TODO: detect if is first attachment
     await _capabilitiesDetector.detect();
     _controller
       ..changeFocusTrackingMode(enable: true)
@@ -146,7 +148,7 @@ class AnsiTerminalService extends TerminalService {
   NativeTerminalImage createImage({
     required Size size,
     String? filePath,
-    TerminalColor? backgroundColor,
+    Color? backgroundColor,
   }) {
     if (filePath != null) {
       return NativeTerminalImage.fromPath(

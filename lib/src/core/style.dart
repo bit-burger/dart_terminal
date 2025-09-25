@@ -1,93 +1,254 @@
-/// Terminal color representation system supporting various color formats.
+// Project imports:
+import 'terminal.dart' show Capability;
+
+/// Terminal color representation system supporting different color formats.
 ///
-/// Based on ANSI escape codes from:
-/// - https://notes.burke.libbey.me/ansi-escape-codes/
-/// - https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
-abstract class TerminalColor {
-  /// RGB representation of the color. Default core colors use -1.
-  final int rgbRep;
+/// [Color.normal] is the default color of a terminal and therefore always supported.
+///
+/// All other colors depend on terminal capabilities, see [Capability].
+/// [Color.standard] represents the standard 8 terminal colors.
+/// [Color.bright] represents the bright versions of the standard colors.
+/// [Color.ansi] is a convenience constructor for the standard 16 ANSI colors
+/// [Color.extended] represents the extended 256-color palette (often known as x
+/// term-256).
+/// [Color.rgb] represents full 24-bit RGB colors.
+extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
+  /// The default terminal color.
+  const Color.normal() : this._((fgSgr: "39", bgSgr: "49", data: _normalType));
 
-  /// ANSI escape sequence for setting this color as background.
-  final String termRepBackground;
-
-  /// ANSI escape sequence for setting this color as foreground.
-  final String termRepForeground;
-
-  /// Unique identifier for color comparison and categorization.
+  /// The standard 8 terminal colors.
   ///
-  /// Color ranges are allocated as follows:
-  /// - [DefaultTerminalColor]: 0
-  /// - [BasicTerminalColor]: 1-9
-  /// - [BrightTerminalColor]: 10-19
-  /// - [XTermTerminalColor]: 20-999
-  /// - [RGBTerminalColor]: 1000-19,999,999
+  /// Make sure that [number] is between 0 and 7.
+  const Color.standard(int number)
+    : this._((
+        fgSgr: "${30 + number}",
+        bgSgr: "${40 + number}",
+        data: number | _standardType,
+      ));
+
+  /// The standard 8 bright terminal colors.
   ///
-  /// Custom implementations should use codes either:
-  /// - Greater than 20,000,000
-  /// - Less than 0
-  final int comparisonCode;
+  /// Make sure that [number] is between 0 and 7.
+  const Color.bright(int number)
+    : this._((
+        fgSgr: "${90 + number}",
+        bgSgr: "${100 + number}",
+        data: number | _brightType,
+      ));
 
-  /// Creates a new terminal color with the specified properties.
+  /// The standard 16 ANSI colors (8 normal + 8 bright).
+  /// The 0-7 correspond to [Color.standard] colors,
+  /// the 8-15 correspond to [Color.bright] colors.
   ///
-  /// Custom implementations must use comparison codes outside the reserved ranges.
-  const TerminalColor({
-    required this.comparisonCode,
-    required this.rgbRep,
-    required this.termRepForeground,
-    required this.termRepBackground,
-  }) : assert(comparisonCode < 0 || comparisonCode > 20000000);
+  /// Make sure that [number] is between 0 and 15.
+  const Color.ansi(int number)
+    : this._((
+        fgSgr: number < 8 ? "${30 + number}" : "${90 + (number - 8)}",
+        bgSgr: number < 8 ? "${40 + number}" : "${100 + (number - 8)}",
+        data: number < 8 ? (number | _normalType) : (number | _brightType),
+      ));
 
-  const TerminalColor._(
-    this.rgbRep,
-    this.termRepForeground,
-    this.termRepBackground,
-    this.comparisonCode,
-  );
+  /// The extended 256-color palette (often known as xterm-256).
+  ///
+  /// The first 16 colors correspond to the standard and bright colors,
+  /// but could theoretically be mapped differently by the terminal.
+  /// Using [Color.optimizedExtended] uses these mappings instead.
+  ///
+  /// To dynamically create extended colors,
+  /// use [Color.optimizedExtended] instead.
+  ///
+  /// Make sure that [number] is between 0 and 255.
+  const Color.extended(int number)
+    : this._((
+        fgSgr: "38;5;$number",
+        bgSgr: "48;5;$number",
+        data: number | _xtermType,
+      ));
 
-  @override
-  bool operator ==(Object other) =>
-      other is TerminalColor && comparisonCode == other.comparisonCode;
+  /// The preferred constructor for extended colors
+  /// if the extended colors are created dynamically.
+  ///
+  /// Will also [Color.bright] or [Color.standard] if the number
+  /// corresponds to a standard or bright color
+  /// even though these could theoretically be mapped differently
+  /// than the actual [Color.extended].
+  ///
+  /// Supported if [Capability.extended] is supported (which is rare).
+  ///
+  /// Make sure that [number] is between 0 and 255.
+  factory Color.optimizedExtended(int number) {
+    assert(number >= 0 && number < 256);
+    return _extendedColors[number];
+  }
 
-  @override
-  int get hashCode => comparisonCode;
+  const Color._rgbOptimizedForBackground(int r, int g, int b, int rgb)
+    : this._((fgSgr: "", bgSgr: "48;2;$r;$g;$b", data: rgb));
+
+  const Color._rgb(int r, int g, int b, int rgb)
+    : this._((fgSgr: "38;2;$r;$g;$b", bgSgr: "48;2;$r;$g;$b", data: rgb));
+
+  /// Create an RGB color from red, green, and blue components (0–255).
+  ///
+  /// Supported if [Capability.trueColors] is supported (which is rare).
+  const Color.rgb({int r = 0, int g = 0, int b = 0})
+    : this._rgb(r, g, b, r * 256 * 256 + g * 256 + b);
+
+  const Color.rgbOptimizedForBackground({int r = 0, int g = 0, int b = 0})
+    : this._rgbOptimizedForBackground(r, g, b, r * 256 * 256 + g * 256 + b);
+
+  /// Create an RGB color from a 24-bit integer value (0xRRGGBB).
+  ///
+  /// Supported if [Capability.trueColors] is supported (which is rare).
+  const Color.rgbRaw(int color)
+    : this._rgb(
+        color ~/ 256 ~/ 256,
+        (color % (256 * 256)) ~/ 256,
+        color % 256,
+        color,
+      );
+
+  const Color.rgbRawOptimizedForBackground(int color)
+    : this._rgb(
+        color ~/ 256 ~/ 256,
+        (color % (256 * 256)) ~/ 256,
+        color % 256,
+        color,
+      );
+
+  int get _data => _.data & ~_typeMask;
+  int get _type => _.data & _typeMask;
 }
 
-/// Text decorations that can be applied to terminal output.
+const _typeMask = 0xF << 60;
+const _normalType = 1 << 63;
+const _standardType = 1 << 62;
+const _brightType = 1 << 61;
+const _xtermType = 1 << 60;
+const _rgbType = 0;
+
+/// A set of text effects that can be applied to text in a terminal.
 ///
-/// Not all decorations are supported by all terminals. Some terminals may
-/// interpret these decorations differently or not support them at all.
-enum TextDecoration {
+/// Not all effects are supported by all terminals. Some terminals may
+/// interpret these effects differently or not support them at all.
+/// There are matching [Capability]s for each effect.
+///
+/// See the constants for information on the different effects.
+///
+/// Note: Some effects are mutually exclusive and enabling one
+/// will disable the other, e.g. [intense] and [faint],
+/// therefore it is not recommended to combine them.
+extension type const TextEffects._(int _data) {
+  /// Constructor to apply multiple effects at once.
+  const TextEffects({
+    bool intense = false,
+    bool faint = false,
+    bool italic = false,
+    bool underline = false,
+    bool doubleUnderline = false,
+    bool slowBlink = false,
+    bool fastBlink = false,
+    bool crossedOut = false,
+  }) : this._(
+         ((intense ? 1 : 0) << 0) +
+             ((faint ? 1 : 0) << 1) +
+             ((italic ? 1 : 0) << 2) +
+             ((underline ? 1 : 0) << 3) +
+             ((doubleUnderline ? 1 : 0) << 4) +
+             ((slowBlink ? 1 : 0) << 5) +
+             ((fastBlink ? 1 : 0) << 6) +
+             ((crossedOut ? 1 : 0) << 7),
+       );
+
+  /// No text effects.
+  const TextEffects.none() : this._(0);
+
+  const TextEffects._decorationNumber(int decorationNumber)
+    : this._(1 << decorationNumber);
+
+  /// Bold or increased intensity text.
+  ///
+  /// Mutually exclusive with [faint].
+  static const intense = TextEffects._decorationNumber(0);
+
+  /// Decreased intensity or light font weight.
+  ///
+  /// Mutually exclusive with [intense].
+  static const faint = TextEffects._decorationNumber(1);
+
+  /// Italic text style.
+  static const italic = TextEffects._decorationNumber(2);
+
+  /// Single underline decoration.
+  ///
+  /// Mutually exclusive with [doubleUnderline].
+  static const underline = TextEffects._decorationNumber(3);
+
+  /// Double underline decoration.
+  ///
+  /// Mutually exclusive with [underline].
+  ///
+  /// Note: Some terminals may interpret this as disabling bold intensity
+  /// rather than applying a double underline,
+  /// therefore be sure to check the capabilities.
+  static const doubleUnderline = TextEffects._decorationNumber(4);
+
+  /// Slow blinking text.
+  ///
+  /// Mutually exclusive with [fastBlink].
+  static const slowBlink = TextEffects._decorationNumber(5);
+
+  /// Fast blinking text.
+  ///
+  /// Mutually exclusive with [slowBlink].
+  static const fastBlink = TextEffects._decorationNumber(6);
+
+  /// Crossed-out text.
+  static const crossedOut = TextEffects._decorationNumber(7);
+
+  TextEffects operator |(TextEffects other) =>
+      TextEffects._(_data | other._data);
+  TextEffects operator &(TextEffects other) =>
+      TextEffects._(_data & other._data);
+  TextEffects operator ^(TextEffects other) =>
+      TextEffects._(_data ^ other._data);
+  TextEffects operator ~() => TextEffects._(~_data & 0xFF);
+
+  bool get isEmpty => _data == 0;
+}
+
+/// For internal use only.
+enum TextEffect {
   /// Bold or increased intensity text.
   /// Mutually exclusive with [faint].
-  intense(1, 22, 0),
+  intense._(1, 22, 0),
 
   /// Decreased intensity or light font weight.
   /// Mutually exclusive with [intense].
-  faint(2, 22, 1),
+  faint._(2, 22, 1),
 
   /// Italic text style.
-  italic(3, 23, 2),
+  italic._(3, 23, 2),
 
   /// Single underline decoration.
   /// Mutually exclusive with [doubleUnderline].
-  underline(4, 24, 3),
+  underline._(4, 24, 3),
 
   /// Double underline decoration.
   /// Note: Some terminals may interpret this as disabling bold intensity
   /// rather than applying a double underline.
-  doubleUnderline(21, 24, 4),
+  doubleUnderline._(21, 24, 4),
 
   /// Slow blinking text.
   /// Mutually exclusive with [fastBlink].
-  slowBlink(5, 25, 5),
+  slowBlink._(5, 25, 5),
 
   /// Fast blinking text.
   /// Mutually exclusive with [slowBlink].
-  fastBlink(6, 25, 6),
+  fastBlink._(6, 25, 6),
 
   /// Crossed-out text.
   /// Note: Not supported in Terminal.app
-  crossedOut(9, 29, 7);
+  crossedOut._(9, 29, 7);
 
   /// ANSI SGR code for enabling this decoration
   final String onCode;
@@ -98,247 +259,89 @@ enum TextDecoration {
   /// Internal bit flag for decoration combinations
   final int bitFlag;
 
-  const TextDecoration(int onCode, int offCode, int decorationNumber)
+  const TextEffect._(int onCode, int offCode, int decorationNumber)
     : assert(decorationNumber < 64),
       onCode = "$onCode",
       offCode = "$offCode",
       bitFlag = 1 << decorationNumber;
 
-  /// Maximum bit flag used by decorations
-  static const highestBitFlag = 7;
+  /// Returns true if this effect is included in the given [effects].
+  bool containedIn(TextEffects effects) => (bitFlag & effects._data) != 0;
 }
 
-/// A collection of text decorations that can be applied together.
-///
-/// Provides efficient handling of multiple text decorations through
-/// bitwise operations.
-class TextDecorationSet {
-  /// Bit field representing active decorations
-  final int bitField;
-
-  /// Creates a set with all possible decorations enabled
-  const TextDecorationSet.all() : bitField = ~0;
-
-  /// Creates a set from an iterable of decorations
-  TextDecorationSet.from(Iterable<TextDecoration> textDecorations)
-    : bitField = textDecorations.fold(
-        0,
-        (previousValue, element) => previousValue & element.bitFlag,
-      );
-
-  /// Creates a new set containing decorations present in both sets
-  TextDecorationSet.union(TextDecorationSet a, TextDecorationSet b)
-    : bitField = a.bitField & b.bitField;
-
-  /// Creates a new set with decorations from [a] excluding those in [b]
-  TextDecorationSet.without(TextDecorationSet a, TextDecorationSet b)
-    : bitField = a.bitField & ~b.bitField;
-
-  const TextDecorationSet({
-    bool intense = false,
-    bool faint = false,
-    bool italic = false,
-    bool underline = false,
-    bool doubleUnderline = false,
-    bool slowBlink = false,
-    bool fastBlink = false,
-    bool crossedOut = false,
-  }) : bitField =
-           ((intense ? 1 : 0) << 0) +
-           ((faint ? 1 : 0) << 1) +
-           ((italic ? 1 : 0) << 2) +
-           ((underline ? 1 : 0) << 3) +
-           ((doubleUnderline ? 1 : 0) << 4) +
-           ((slowBlink ? 1 : 0) << 5) +
-           ((fastBlink ? 1 : 0) << 6) +
-           ((crossedOut ? 1 : 0) << 7);
-
-  const TextDecorationSet._decorationNumber(int decorationNumber)
-    : bitField = 1 << decorationNumber;
-
-  const TextDecorationSet.empty() : bitField = 0;
-
-  /// sets containing one [TextDecoration]
-  /// corresponding to all possible [TextDecoration]s
-  static const intense = TextDecorationSet._decorationNumber(0);
-  static const faint = TextDecorationSet._decorationNumber(1);
-  static const italic = TextDecorationSet._decorationNumber(2);
-  static const underline = TextDecorationSet._decorationNumber(3);
-  static const doubleUnderline = TextDecorationSet._decorationNumber(4);
-  static const slowBlink = TextDecorationSet._decorationNumber(5);
-  static const fastBlink = TextDecorationSet._decorationNumber(6);
-  static const crossedOut = TextDecorationSet._decorationNumber(7);
-
-  bool contains(TextDecoration decoration) =>
-      decoration.bitFlag & bitField != 0;
-
-  @override
-  int get hashCode => bitField;
-
-  @override
-  bool operator ==(Object other) =>
-      other is TextDecorationSet && bitField == other.bitField;
-}
-
-/// Default core color.
-class DefaultTerminalColor extends TerminalColor {
-  const DefaultTerminalColor() : super._(-1, "39", "49", 0);
-}
-
-abstract class _BaseIntTerminalColor extends TerminalColor {
-  final int color;
-
-  const _BaseIntTerminalColor(
-    String termRepForeground,
-    String termRepBackground, {
-    required this.color,
-    required int rgb,
-    required int comparisonCodeStart,
-  }) : super._(
-         rgb,
-         termRepForeground,
-         termRepBackground,
-         color + comparisonCodeStart,
-       );
-}
-
-/// The 8 basic colors.
-class BasicTerminalColor extends _BaseIntTerminalColor {
-  /// The colors from 0 to 7;
-  const BasicTerminalColor.raw({required super.color, required super.rgb})
-    : assert(color >= 0 && color < 8),
-      super("${30 + color}", "${40 + color}", comparisonCodeStart: 1);
-
-  static const black = BasicTerminalColor.raw(color: 0, rgb: 0);
-  static const red = BasicTerminalColor.raw(color: 1, rgb: 0x00FF0000);
-  static const green = BasicTerminalColor.raw(color: 2, rgb: 0x0000FF00);
-  static const yellow = BasicTerminalColor.raw(color: 3, rgb: 0x00FFFF00);
-  static const blue = BasicTerminalColor.raw(color: 4, rgb: 0x000000FF);
-  static const magenta = BasicTerminalColor.raw(color: 5, rgb: 0x00FF00FF);
-  static const cyan = BasicTerminalColor.raw(color: 6, rgb: 0x0000FFFF);
-  static const white = BasicTerminalColor.raw(color: 7, rgb: 0x00FFFFFFFF);
-}
-
-/// The 8 bright colors.
-class BrightTerminalColor extends _BaseIntTerminalColor {
-  /// The colors from 0 to 7;
-  const BrightTerminalColor.raw({required super.color, required super.rgb})
-    : assert(color >= 0 && color < 8),
-      super("${90 + color}", "${100 + color}", comparisonCodeStart: 10);
-
-  String termRep({required bool background}) {
-    if (!background) {
-      return (90 + color).toString();
-    } else {
-      return (100 + color).toString();
+extension ToTextEffects on Iterable<TextEffect> {
+  /// Combines multiple [TextEffect]s into a single [TextEffects] instance.
+  TextEffects toTextEffects() {
+    int data = 0;
+    for (final effect in this) {
+      data |= effect.bitFlag;
     }
+    return TextEffects._(data);
   }
-
-  static const black = BrightTerminalColor.raw(color: 0, rgb: 0x00050505);
-  static const red = BrightTerminalColor.raw(color: 1, rgb: 0x00FF0505);
-  static const green = BrightTerminalColor.raw(color: 2, rgb: 0x0005FF05);
-  static const yellow = BrightTerminalColor.raw(color: 3, rgb: 0x00FFFF05);
-  static const blue = BrightTerminalColor.raw(color: 4, rgb: 0x000505FF);
-  static const magenta = BrightTerminalColor.raw(color: 5, rgb: 0x00FF05FF);
-  static const cyan = BrightTerminalColor.raw(color: 6, rgb: 0x0005FFFF);
-  static const white = BrightTerminalColor.raw(color: 7, rgb: 0x00FFFFFFFF);
 }
 
-/// The 256 colors supported by xterm.
-/// For all 256 see: {@image <image alt='' src='/docs/xterm_256_colors.png'>}
-class XTermTerminalColor extends _BaseIntTerminalColor {
-  /// The colors from 0 to 255;
-  const XTermTerminalColor.raw(int color)
-    : assert(color >= 0 && color < 256),
-      super(
-        "38;5;$color",
-        "48;5;$color",
-        color: color,
-        rgb: color < 16
-            ? 0
-            : color < 232
-            ? (((color - 16) ~/ 36 == 0 ? 0 : 55 + ((color - 16) ~/ 36) * 40) <<
-                      16) |
-                  (((((color - 16) % 36) ~/ 6 == 0
-                          ? 0
-                          : 55 + ((color - 16) % 36) ~/ 6 * 40)) <<
-                      8) |
-                  ((color - 16) % 6 == 0 ? 0 : 55 + ((color - 16) % 6) * 40)
-            : ((8 + 10 * (color - 232)) << 16) |
-                  ((8 + 10 * (color - 232)) << 8) |
-                  (8 + 10 * (color - 232)),
-        comparisonCodeStart: 20,
-      );
+/// A style that can be applied to text in a terminal,
+/// consisting of a foreground color, an optional background color,
+/// and a set of text effects.
+///
+/// Not all colors and effects are supported by all terminals. Some terminals may
+/// interpret these colors and effects differently or not support them at all.
+/// There are matching [Capability]s for each color format and effect.
+extension type const TextStyle._(
+  ({Color color, Color? backgroundColor, TextEffects effects}) _
+) {
+  const TextStyle({
+    Color color = const Color.normal(),
+    Color? backgroundColor,
+    TextEffects effects = const TextEffects.none(),
+  }) : this._((
+         color: color,
+         backgroundColor: backgroundColor,
+         effects: effects,
+       ));
 
-  /// General RGB from cube coordinates (0..5)
-  factory XTermTerminalColor.fromCube({
-    required int r,
-    required int g,
-    required int b,
-  }) {
-    assert(r >= 0 && r < 6);
-    assert(g >= 0 && g < 6);
-    assert(b >= 0 && b < 6);
-    final index = 16 + 36 * r + 6 * g + b;
-    return XTermTerminalColor.raw(index);
-  }
-
-  /// Grayscale (0 = dark, 23 = bright)
-  factory XTermTerminalColor.grayscale(int level) {
-    assert(level >= 0 && level < 24);
-    final index = 232 + level;
-    return XTermTerminalColor.raw(index);
-  }
-
-  // ----------------------
-  // Hues with intuitive shades (0 = darkest, 5 = brightest)
-  // ----------------------
-  factory XTermTerminalColor.redShade(int level) =>
-      XTermTerminalColor.fromCube(r: level, g: 0, b: 0);
-  factory XTermTerminalColor.greenShade(int level) =>
-      XTermTerminalColor.fromCube(r: 0, g: level, b: 0);
-  factory XTermTerminalColor.blueShade(int level) =>
-      XTermTerminalColor.fromCube(r: 0, g: 0, b: level);
-  factory XTermTerminalColor.yellowShade(int level) =>
-      XTermTerminalColor.fromCube(r: level, g: level, b: 0);
-  factory XTermTerminalColor.cyanShade(int level) =>
-      XTermTerminalColor.fromCube(r: 0, g: level, b: level);
-  factory XTermTerminalColor.magentaShade(int level) =>
-      XTermTerminalColor.fromCube(r: level, g: 0, b: level);
-  factory XTermTerminalColor.whiteShade(int level) =>
-      XTermTerminalColor.fromCube(r: level, g: level, b: level);
+  Color get color => _.color;
+  Color? get backgroundColor => _.backgroundColor;
+  TextEffects get textEffects => _.effects;
 }
 
-/// 256^3 colors, not supported by every core.
-class RGBTerminalColor extends _BaseIntTerminalColor {
-  /// The colors from 0 to 256^3 - 1;
-  const RGBTerminalColor.raw({required int color})
-    : this._(
-        color ~/ 256 ~/ 256,
-        (color % (256 * 256)) ~/ 256,
-        color % 256,
-        color,
-      );
+/// A representation of a single character with a specific foreground color
+/// and text effects.
+///
+/// Not all colors and effects are supported by all terminals. Some terminals may
+/// interpret these colors and effects differently or not support them at all.
+/// There are matching [Capability]s for each color format and effect.
+extension type const ForegroundStyle._(({Color color, TextEffects effects}) _) {
+  const ForegroundStyle({
+    Color color = const Color.normal(),
+    TextEffects effects = const TextEffects.none(),
+  }) : this._((color: color, effects: effects));
 
-  /// The colors separated, each can be assigned 0 to 255.
-  const RGBTerminalColor({int red = 0, int green = 0, int blue = 0})
-    : this._(red, green, blue, red * 256 * 256 + green * 256 + blue);
-
-  const RGBTerminalColor._(int red, int green, int blue, int color)
-    : assert(red >= 0 && red < 256),
-      assert(green >= 0 && green < 256),
-      assert(blue >= 0 && blue < 256),
-      super(
-        "38;2;$red;$green;$blue",
-        "48;2;$red;$green;$blue",
-        rgb: red * 256 * 256 + green * 256 + green,
-        color: color,
-        comparisonCodeStart: 1000,
-      );
+  Color get color => _.color;
+  TextEffects get effects => _.effects;
 }
 
+/// A representation of a single character with a specific foreground color
+/// and text effects.
+///
+/// Not all colors and effects are supported by all terminals. Some terminals may
+/// interpret these colors and effects differently or not support them at all.
+/// There are matching [Capability]s for each color format and effect.
+extension type const Foreground._(({ForegroundStyle style, int codePoint}) _) {
+  const Foreground({
+    ForegroundStyle style = const ForegroundStyle(),
+    int codePoint = 32,
+  }) : this._((style: style, codePoint: codePoint));
+
+  ForegroundStyle get style => _.style;
+  int get codePoint => _.codePoint;
+  Color get color => _.style._.color;
+  TextEffects get effects => _.style._.effects;
+}
+
+/// A set of characters used to draw borders and lines in terminal UIs.
+///
 /// Source: https://github.com/onepub-dev/dart_console/blob/main/lib/src/table.dart
-
 class BorderCharSet {
   final String glyphs;
   const BorderCharSet.raw(this.glyphs);
@@ -396,26 +399,233 @@ class BorderCharSet {
   factory BorderCharSet.double() => BorderCharSet.raw('═║╔╗╚╝╬╩╦╣╠');
 }
 
-extension type const TerminalForegroundStyle._(
-  ({TerminalColor color, TextDecorationSet textDecorations}) _
-) {
-  const TerminalForegroundStyle({
-    TerminalColor color = const DefaultTerminalColor(),
-    TextDecorationSet textDecorations = const TextDecorationSet.empty(),
-  }) : this._((color: color, textDecorations: textDecorations));
+Color toStandard(Color color) => switch (color._type) {
+  _brightType => _extendedColors[color._data],
+  _xtermType => _extendedColors[_extendedToStandardIndex(color._data)],
+  _rgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
+  _ => color,
+};
 
-  TerminalColor get color => _.color;
-  TextDecorationSet get textDecorations => _.textDecorations;
+Color toAnsi(Color color) => switch (color._type) {
+  _xtermType => _extendedColors[_extendedToAnsiIndex(color._data)],
+  _rgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
+  _ => color,
+};
+
+Color toExtended(Color color) => switch (color._type) {
+  _rgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
+  _ => color,
+};
+
+int getRgbVal(Color color) {
+  if (color._type == 0) {
+    return color._data;
+  } else {
+    return _extendedRgbValues[color._data];
+  }
 }
 
-extension type const TerminalForeground._(
-  ({TerminalForegroundStyle style, int codePoint}) _
-) {
-  const TerminalForeground({
-    TerminalForegroundStyle style = const TerminalForegroundStyle(),
-    int codePoint = 32,
-  }) : this._((style: style, codePoint: codePoint));
+String fgSgr(Color color) => color._.fgSgr;
+String bgSgr(Color color) => color._.bgSgr;
 
-  TerminalForegroundStyle get style => _.style;
-  int get codePoint => _.codePoint;
+/// more efficient equality check
+bool equalsColor(Color a, Color b) => a._.data == b._.data;
+
+int _rgb(int r, int g, int b) => r * 256 * 256 + g * 256 + b;
+int _gray(int gray) => _rgb(gray, gray, gray);
+
+List<Color> _extendedColors = [
+  for (var i = 0; i < 8; i++) Color.standard(i),
+  for (var i = 0; i < 8; i++) Color.bright(i),
+  for (var i = 16; i <= 256; i++) Color.extended(i),
+];
+
+const _extendedColorsCubeSteps = [0, 95, 135, 175, 215, 255];
+
+List<int> _extendedRgbValues = [
+  _rgb(0, 0, 0), // 0 black
+  _rgb(128, 0, 0), // 1 red
+  _rgb(0, 128, 0), // 2 green
+  _rgb(128, 128, 0), // 3 yellow
+  _rgb(0, 0, 128), // 4 blue
+  _rgb(128, 0, 128), // 5 magenta
+  _rgb(0, 128, 128), // 6 cyan
+  _rgb(192, 192, 192), // 7 white
+  _rgb(128, 128, 128), // 8 bright black / gray
+  _rgb(255, 0, 0), // 9 bright red
+  _rgb(0, 255, 0), // 10 bright green
+  _rgb(255, 255, 0), // 11 bright yellow
+  _rgb(0, 0, 255), // 12 bright blue
+  _rgb(255, 0, 255), // 13 bright magenta
+  _rgb(0, 255, 255), // 14 bright cyan
+  _rgb(255, 255, 255), // 15 bright white
+  // 16–231: 6x6x6 color cube
+  for (var r in _extendedColorsCubeSteps)
+    for (var g in _extendedColorsCubeSteps)
+      for (var b in _extendedColorsCubeSteps) _rgb(r, g, b),
+
+  // 232–255: grayscale ramp
+  for (int i = 0; i < 24; i++) _gray((8 + i * 10).clamp(0, 255)),
+];
+
+int _extendedToStandardIndex(int extendedIndex) {
+  // First 16 colors map directly
+  if (extendedIndex < 16) return extendedIndex;
+
+  // 16–231: 6x6x6 cube
+  if (extendedIndex <= 231) {
+    // Convert cube index to RGB indices 0..5
+    int i = extendedIndex - 16;
+    int r = i ~/ 36;
+    int g = (i % 36) ~/ 6;
+    int b = i % 6;
+
+    // Map to standard 16-color index
+    int ansiIndex = 0;
+    if (r > 2) ansiIndex |= 1 << 2; // red
+    if (g > 2) ansiIndex |= 1 << 1; // green
+    if (b > 2) ansiIndex |= 1 << 0; // blue
+
+    // Bright bit for foreground? You can optionally set bright = 8
+    return ansiIndex; // 0..7
+  }
+
+  // 232–255: grayscale ramp → map to either 7 (white) or 0 (black)
+  return (extendedIndex - 232) > 11 ? 15 : 7;
+}
+
+int _extendedToAnsiIndex(int extendedIndex) {
+  // First 16 colors map directly
+  if (extendedIndex < 16) return extendedIndex;
+
+  // 16–231: 6x6x6 cube
+  if (extendedIndex <= 231) {
+    int i = extendedIndex - 16;
+    int r = i ~/ 36;
+    int g = (i % 36) ~/ 6;
+    int b = i % 6;
+
+    int ansiIndex = 0;
+    if (r > 2) ansiIndex |= 1 << 2; // red
+    if (g > 2) ansiIndex |= 1 << 1; // green
+    if (b > 2) ansiIndex |= 1 << 0; // blue
+
+    // Bright bit if any channel is > 3 (upper half of cube)
+    if (r > 2 || g > 2 || b > 2) ansiIndex |= 8;
+
+    return ansiIndex; // 0–15
+  }
+
+  // 232–255: grayscale ramp → bright for light grays
+  int gray = extendedIndex - 232;
+  return gray > 11 ? 15 : 7; // 7=dark, 15=bright white
+}
+
+int _rgbToExtendedIndex(int rgb) {
+  final r = (rgb ~/ 256 ~/ 256);
+  final g = ((rgb % (256 * 256)) ~/ 256);
+  final b = (rgb % 256);
+  // Map RGB to 6x6x6 cube
+  int rIndex = r < 48
+      ? 0
+      : r < 114
+      ? 1
+      : ((r - 35) ~/ 40);
+  int gIndex = g < 48
+      ? 0
+      : g < 114
+      ? 1
+      : ((g - 35) ~/ 40);
+  int bIndex = b < 48
+      ? 0
+      : b < 114
+      ? 1
+      : ((b - 35) ~/ 40);
+
+  int cubeIndex = 16 + 36 * rIndex + 6 * gIndex + bIndex;
+
+  // Cube RGB values
+  const cubeSteps = [0, 95, 135, 175, 215, 255];
+  int rCube = cubeSteps[rIndex];
+  int gCube = cubeSteps[gIndex];
+  int bCube = cubeSteps[bIndex];
+  int distCube =
+      (r - rCube) * (r - rCube) +
+      (g - gCube) * (g - gCube) +
+      (b - bCube) * (b - bCube);
+
+  // 2️⃣ Grayscale (232–255)
+  int gray = ((r + g + b) ~/ 3).clamp(0, 255);
+  int grayIndex = ((gray - 8) / 10.7).round().clamp(0, 23);
+  int grayXterm = 232 + grayIndex;
+  int grayVal = (8 + grayIndex * 10.7).round();
+  int distGray =
+      (r - grayVal) * (r - grayVal) +
+      (g - grayVal) * (g - grayVal) +
+      (b - grayVal) * (b - grayVal);
+
+  // 3️⃣ Pick closest
+  return distGray < distCube ? grayXterm : cubeIndex;
+}
+
+extension ToDebugStringColor on Color {
+  String toDebugString() {
+    switch (_type) {
+      case _normalType:
+        return "normal";
+      case _standardType:
+        return "standard(${_data})";
+      case _brightType:
+        return "bright(${_data & 0x7F_FF_FF_FF_FF_FF_FF})";
+      case _xtermType:
+        return "extended(${_data & 0x7F_FF_FF_FF_FF_FF_FF})";
+      case _rgbType:
+        final r = _data ~/ 256 ~/ 256;
+        final g = (_data % (256 * 256)) ~/ 256;
+        final b = _data % 256;
+        return "rgb($r, $g, $b)";
+      default:
+        return "unknown";
+    }
+  }
+}
+
+extension ToDebugStringTextEffects on TextEffects {
+  String toDebugString() {
+    if (isEmpty) return "none";
+    List<String> effects = [];
+    for (final effect in TextEffect.values) {
+      if (effect.containedIn(this)) {
+        effects.add(effect.name);
+      }
+    }
+    return effects.join(", ");
+  }
+}
+
+extension ToDebugStringForegroundStyle on ForegroundStyle {
+  String toDebugString() {
+    List<String> parts = [];
+    if (color._type != 0 || color._data != 0) {
+      parts.add("color: ${color.toDebugString()}");
+    }
+    if (!effects.isEmpty) {
+      parts.add("effects: ${effects.toDebugString()}");
+    }
+    return parts.join(", ");
+  }
+}
+
+extension ToDebugStringForeground on Foreground {
+  String toDebugString() {
+    List<String> parts = [];
+    if (codePoint != 32) {
+      parts.add("codePoint: $codePoint");
+    }
+    final styleDetail = style.toDebugString();
+    if (styleDetail.isNotEmpty) {
+      parts.add("style: {$styleDetail}");
+    }
+    return parts.join(", ");
+  }
 }

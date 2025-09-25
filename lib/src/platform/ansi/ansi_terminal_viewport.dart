@@ -8,13 +8,13 @@ const int _borderDrawIdMask = ~(0xF << 60);
 
 class _TerminalCell {
   bool changed = false;
-  TerminalForeground fg = TerminalForeground();
-  TerminalColor bg = DefaultTerminalColor();
-  TerminalForeground? newFg;
-  TerminalColor? newBg;
+  Foreground fg = Foreground();
+  Color bg = Color.normal();
+  Foreground? newFg;
+  Color? newBg;
   int borderState = 0;
 
-  void draw(TerminalForeground? fg, TerminalColor? bg) {
+  void draw(Foreground? fg, Color? bg) {
     assert(fg != null || bg != null);
 
     if (fg != null) {
@@ -46,8 +46,8 @@ class _TerminalCell {
     return diff;
   }
 
-  void reset(TerminalColor background) {
-    fg = TerminalForeground();
+  void reset(Color background) {
+    fg = Foreground();
     bg = background;
     newFg = newBg = null;
     changed = false;
@@ -59,7 +59,7 @@ class _TerminalCell {
     bool right,
     bool bottom,
     BorderCharSet charSet,
-    TerminalColor foregroundColor,
+    Color foregroundColor,
     BorderDrawIdentifier borderIdentifier,
   ) {
     if (borderIdentifier.value != (_borderDrawIdMask & borderState)) {
@@ -75,8 +75,8 @@ class _TerminalCell {
     if (bottom) borderState = borderState | _bottomBorderMask;
 
     changed = true;
-    newFg = TerminalForeground(
-      style: TerminalForegroundStyle(color: foregroundColor),
+    newFg = Foreground(
+      style: ForegroundStyle(color: foregroundColor),
       codePoint: charSet.getCorrectGlyph(left, top, right, bottom),
     );
   }
@@ -93,7 +93,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
   final List<List<_TerminalCell>> _screenBuffer = [];
   final List<bool> _changeList = [];
   Size _dataSize = Size(0, 0);
-  TerminalColor? _backgroundFill;
+  Color? _backgroundFill;
 
   _AnsiTerminalViewport._(this.service);
 
@@ -107,8 +107,8 @@ class _AnsiTerminalViewport extends TerminalViewport {
       _controller.setCursorPosition(1, 1);
     }
     io.stdout.write(ansi_codes.resetAllFormats);
-    currentFg = TerminalForegroundStyle();
-    currentBg = DefaultTerminalColor();
+    currentFg = ForegroundStyle();
+    currentBg = Color.normal();
     _onResizeEvent();
   }
 
@@ -187,7 +187,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
 
   @override
   void drawColor({
-    TerminalColor color = const DefaultTerminalColor(),
+    Color color = const Color.normal(),
     bool optimizeByClear = true,
   }) {
     if (optimizeByClear) {
@@ -195,13 +195,13 @@ class _AnsiTerminalViewport extends TerminalViewport {
     } else {
       drawRect(
         background: color,
-        foreground: TerminalForeground(),
+        foreground: Foreground(),
         rect: Position.zero & size,
       );
     }
   }
 
-  void _fillBackgroundOptimizedByClear(TerminalColor color) {
+  void _fillBackgroundOptimizedByClear(Color color) {
     _backgroundFill = color;
     for (int j = 0; j < size.height; j++) {
       _changeList[j] = false;
@@ -215,7 +215,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
   void drawBorderBox({
     required Rect rect,
     required BorderCharSet style,
-    TerminalColor color = const DefaultTerminalColor(),
+    Color color = const Color.normal(),
     BorderDrawIdentifier? drawId,
   }) {
     super.drawBorderBox(rect: rect, color: color, drawId: drawId, style: style);
@@ -235,7 +235,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
     required Position from,
     required Position to,
     required BorderCharSet style,
-    TerminalColor color = const DefaultTerminalColor(),
+    Color color = const Color.normal(),
     BorderDrawIdentifier? drawId,
   }) {
     drawId ??= BorderDrawIdentifier();
@@ -288,8 +288,8 @@ class _AnsiTerminalViewport extends TerminalViewport {
   @override
   void drawPoint({
     required Position position,
-    TerminalColor? background,
-    TerminalForeground? foreground,
+    Color? background,
+    Foreground? foreground,
   }) {
     if (!(Position.zero & size).contains(position)) return;
     _changeList[position.y] = true;
@@ -299,8 +299,8 @@ class _AnsiTerminalViewport extends TerminalViewport {
   @override
   void drawRect({
     required Rect rect,
-    TerminalColor? background,
-    TerminalForeground? foreground,
+    Color? background,
+    Foreground? foreground,
   }) {
     rect = rect.clip(Position.zero & size);
     for (int y = rect.y1; y <= rect.y2; y++) {
@@ -315,14 +315,14 @@ class _AnsiTerminalViewport extends TerminalViewport {
   void drawText({
     required String text,
     required Position position,
-    TerminalForegroundStyle? style,
+    ForegroundStyle? style,
   }) {
     _changeList[position.y] = true;
     for (int i = 0; i < text.length; i++) {
       int codepoint = text.codeUnitAt(i);
       final charPosition = Position(position.x + i, position.y);
-      final foreground = TerminalForeground(
-        style: style ?? TerminalForegroundStyle(),
+      final foreground = Foreground(
+        style: style ?? ForegroundStyle(),
         codePoint: codepoint,
       );
 
@@ -334,8 +334,8 @@ class _AnsiTerminalViewport extends TerminalViewport {
   }
 
   final StringBuffer _redrawBuff = StringBuffer();
-  late TerminalForegroundStyle currentFg;
-  late TerminalColor currentBg;
+  late ForegroundStyle currentFg;
+  late Color currentBg;
 
   /// returns if cursor has been moved
   // more optimizations possible
@@ -343,7 +343,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
   @override
   void updateScreen() {
     if (_backgroundFill != null) {
-      _transition(TerminalForegroundStyle(), _backgroundFill!);
+      _transition(ForegroundStyle(), _backgroundFill!);
       _redrawBuff.write(ansi_codes.eraseEntireScreen);
       _backgroundFill = null;
     }
@@ -388,37 +388,36 @@ class _AnsiTerminalViewport extends TerminalViewport {
     _firstParameter = false;
   }
 
-  void _transition(TerminalForegroundStyle fg, TerminalColor bg) {
-    final fromBitfield = currentFg.textDecorations.bitField;
-    final toBitfield = fg.textDecorations.bitField;
-    final textDecorationsDiff = fromBitfield != toBitfield;
-    final foregroundColorDiff =
-        fg.color.comparisonCode != currentFg.color.comparisonCode;
-    final backgroundColorDiff = bg.comparisonCode != currentBg.comparisonCode;
-    if (!textDecorationsDiff) {
+  void _transition(ForegroundStyle fg, Color bg) {
+    final fromEffects = currentFg.effects;
+    final toEffects = fg.effects;
+    final textEffectsDiff = fromEffects != toEffects;
+    final foregroundColorDiff = !equalsColor(fg.color, currentFg.color);
+    final backgroundColorDiff = !equalsColor(bg, currentBg);
+    if (!textEffectsDiff) {
       if (foregroundColorDiff && backgroundColorDiff) {
         _redrawBuff.write(
-          "${ansi_codes.CSI}${fg.color.termRepForeground};"
-          "${bg.termRepBackground}m",
+          "${ansi_codes.CSI}${fgSgr(fg.color)};"
+          "${bgSgr(bg)}m",
         );
         currentFg = fg;
         currentBg = bg;
       } else if (foregroundColorDiff) {
-        _redrawBuff.write("${ansi_codes.CSI}${fg.color.termRepForeground}m");
+        _redrawBuff.write("${ansi_codes.CSI}${fgSgr(fg.color)}m");
         currentFg = fg;
       } else if (backgroundColorDiff) {
-        _redrawBuff.write("${ansi_codes.CSI}${bg.termRepBackground}m");
+        _redrawBuff.write("${ansi_codes.CSI}${bgSgr(bg)}m");
         currentBg = bg;
       }
-    } else if (toBitfield == 0) {
+    } else if (toEffects.isEmpty) {
       _firstParameter = true;
       _redrawBuff.write(ansi_codes.CSI);
       _writeParameter("0");
-      if (fg.color != const DefaultTerminalColor()) {
-        _writeParameter(fg.color.termRepForeground);
+      if (fg.color != const Color.normal()) {
+        _writeParameter(fgSgr(fg.color));
       }
-      if (bg != const DefaultTerminalColor()) {
-        _writeParameter(bg.termRepBackground);
+      if (bg != const Color.normal()) {
+        _writeParameter(bgSgr(bg));
       }
       _redrawBuff.writeCharCode(109);
       currentFg = fg;
@@ -428,25 +427,25 @@ class _AnsiTerminalViewport extends TerminalViewport {
       _redrawBuff.write(ansi_codes.CSI);
       currentFg = fg;
       if (foregroundColorDiff) {
-        _writeParameter(fg.color.termRepForeground);
+        _writeParameter(fgSgr(fg.color));
       }
       if (backgroundColorDiff) {
-        _writeParameter(bg.termRepBackground);
+        _writeParameter(bgSgr(bg));
         currentBg = bg;
       }
-      final changedBitfield = fromBitfield ^ toBitfield;
-      final addedBitField = toBitfield & changedBitfield;
-      for (var i = 0; i <= TextDecoration.highestBitFlag; i++) {
-        final flag = 1 << i;
-        if (flag & changedBitfield != 0) {
-          final decoration = TextDecoration.values[i];
-          if (flag & addedBitField != 0) {
-            _writeParameter(decoration.onCode);
+      final changedEffects = fromEffects ^ toEffects;
+      final addedEffects = toEffects & changedEffects;
+      // instead iterate TextDecoration.values
+      for (final effect in TextEffect.values) {
+        if (effect.containedIn(changedEffects)) {
+          if (effect.containedIn(addedEffects)) {
+            _writeParameter(effect.onCode);
           } else {
-            _writeParameter(decoration.offCode);
+            _writeParameter(effect.offCode);
           }
         }
       }
+
       // TODO: optimization to use reset like \e[0;...;...m
       _redrawBuff.writeCharCode(109);
     }

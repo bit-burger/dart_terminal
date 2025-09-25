@@ -13,12 +13,12 @@ abstract class TerminalImage {
   /// Get the color at the specified position.
   ///
   /// Returns null if the position is transparent or out of bounds.
-  TerminalColor? operator [](Position position);
+  Color? operator [](Position position);
 
   /// Set the color at the specified position.
   ///
   /// Use null to make the position transparent.
-  void operator []=(Position position, TerminalColor? color);
+  void operator []=(Position position, Color? color);
 }
 
 /// Identifier used to track border drawing operations.
@@ -52,7 +52,7 @@ abstract class TerminalCanvas {
   void drawText({
     required String text,
     required Position position,
-    TerminalForegroundStyle? style,
+    ForegroundStyle? style,
   });
 
   /// Draws a filled rectangle on the canvas.
@@ -61,8 +61,8 @@ abstract class TerminalCanvas {
   /// [foreground] colors.
   void drawRect({
     required Rect rect,
-    TerminalColor? background,
-    TerminalForeground? foreground,
+    Color? background,
+    Foreground? foreground,
   });
 
   /// Draws a single point on the canvas.
@@ -71,8 +71,8 @@ abstract class TerminalCanvas {
   /// and [foreground] colors.
   void drawPoint({
     required Position position,
-    TerminalColor? background,
-    TerminalForeground? foreground,
+    Color? background,
+    Foreground? foreground,
   });
 
   /// Draws a box border around or within the specified rectangle.
@@ -82,7 +82,7 @@ abstract class TerminalCanvas {
   void drawBorderBox({
     required Rect rect,
     required BorderCharSet style,
-    TerminalColor color,
+    Color color,
     BorderDrawIdentifier drawId,
   });
 
@@ -94,7 +94,7 @@ abstract class TerminalCanvas {
     required Position from,
     required Position to,
     required BorderCharSet style,
-    TerminalColor color,
+    Color color,
     BorderDrawIdentifier drawId,
   });
 
@@ -106,6 +106,7 @@ abstract class TerminalCanvas {
     required covariant TerminalImage image,
   });
 
-  /// Fills the complete background with [color] or if none is provided erases it.
-  void drawColor({TerminalColor color});
+  /// Fills the complete background (and erases foreground)
+  /// with [color] or if none is provided erases everything.
+  void drawColor({Color color});
 }

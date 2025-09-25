@@ -1,8 +1,8 @@
 // Project imports:
+
+// Project imports:
 import 'geometry.dart';
 import 'terminal.dart';
-
-// ignore_for_file: public_member_api_docs
 
 class LambdaTerminalListener implements TerminalListener {
   void Function(ControlCharacter) onControlCharacter;

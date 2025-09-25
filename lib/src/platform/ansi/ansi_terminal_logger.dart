@@ -14,8 +14,8 @@ class _AnsiTerminalLogger extends TerminalLogger {
   @override
   void log(
     String text, {
-    TerminalForegroundStyle foregroundStyle = const TerminalForegroundStyle(),
-    TerminalColor backgroundColor = const DefaultTerminalColor(),
+    ForegroundStyle foregroundStyle = const ForegroundStyle(),
+    Color backgroundColor = const Color.normal(),
   }) {
     // TODO: implement log
   }

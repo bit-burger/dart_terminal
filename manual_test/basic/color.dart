@@ -10,7 +10,7 @@ void main() async {
   void paint() {
     for (int j = 0; j < terminalService.viewport.size.height; j++) {
       for (int i = 0; i < terminalService.viewport.size.width; i++) {
-        final color = XTermTerminalColor.raw((plus + i + j) % 256);
+        final color = Color.optimizedExtended((plus + i + j) % 256);
         terminalService.viewport.drawPoint(
           position: Position(i, j),
           background: color,

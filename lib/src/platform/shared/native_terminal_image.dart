@@ -14,7 +14,7 @@ import 'package:dart_tui/core.dart';
 /// from files and creating blank or filled image buffers.
 class NativeTerminalImage extends TerminalImage {
   /// Storage for color data, where each element represents a terminal cell
-  final List<TerminalColor?> _data;
+  final List<Color?> _data;
 
   /// Dimensions of the terminal image
   final Size _size;
@@ -29,7 +29,7 @@ class NativeTerminalImage extends TerminalImage {
   ///
   /// [size] determines the dimensions of the image.
   /// [color] is the color to fill with, null for transparent.
-  NativeTerminalImage.filled(Size size, TerminalColor? color)
+  NativeTerminalImage.filled(Size size, Color? color)
     : _data = List.filled(size.width * size.height, color),
       _size = size;
 
@@ -38,11 +38,7 @@ class NativeTerminalImage extends TerminalImage {
   /// [i] is the linear index in the image
   /// [img] is the source image
   /// [background] is the color to use for transparent pixels
-  static TerminalColor? _getPixelFromNative(
-    int i,
-    img.Image img,
-    TerminalColor? background,
-  ) {
+  static Color? _getPixelFromNative(int i, img.Image img, Color? background) {
     final x = i % img.width;
     final y = i ~/ img.width;
     final pixel = img.getPixel(x, y);
@@ -53,10 +49,10 @@ class NativeTerminalImage extends TerminalImage {
     }
 
     // Convert RGB values to terminal color
-    return RGBTerminalColor(
-      red: pixel.r.toInt(),
-      green: pixel.g.toInt(),
-      blue: pixel.b.toInt(),
+    return Color.rgbOptimizedForBackground(
+      r: pixel.r.toInt(),
+      g: pixel.g.toInt(),
+      b: pixel.b.toInt(),
     );
   }
 
@@ -68,7 +64,7 @@ class NativeTerminalImage extends TerminalImage {
   static NativeTerminalImage fromPath({
     required Size size,
     required String path,
-    TerminalColor? backgroundColor,
+    Color? backgroundColor,
   }) {
     var image = img.decodeImage(File(path).readAsBytesSync());
     if (image == null) throw ArgumentError("File could not be decoded");
@@ -87,7 +83,7 @@ class NativeTerminalImage extends TerminalImage {
   /// [backgroundColor] is used for transparent pixels
   NativeTerminalImage.fromRealImage({
     required img.Image image,
-    TerminalColor? backgroundColor,
+    Color? backgroundColor,
   }) : _data = List.generate(
          image.height * image.width,
          (i) => _getPixelFromNative(i, image, backgroundColor),
@@ -95,11 +91,11 @@ class NativeTerminalImage extends TerminalImage {
        _size = Size(image.width, image.height);
 
   @override
-  TerminalColor? operator [](Position position) =>
+  Color? operator [](Position position) =>
       _data[position.y * size.width + position.x];
 
   @override
-  void operator []=(Position position, TerminalColor? color) {
+  void operator []=(Position position, Color? color) {
     _data[position.y * size.width + position.x] = color;
   }
 

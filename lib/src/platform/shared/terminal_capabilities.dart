@@ -6,6 +6,9 @@ import 'package:dart_tui/core.dart';
 import 'terminfo.dart';
 
 // TODO: support alternateScreenBuffer
+// TODO: support bracketedPaste
+// TODO: support ansiColors
+// TODO: nerdFont
 
 /// Detects and tracks terminal capabilities.
 ///
@@ -111,7 +114,7 @@ class XtermTerminalCapabilitiesDetector extends TerminalCapabilitiesDetector {
     if (!isXterm) return;
 
     // Detect color support levels
-    supportedCaps.add(Capability.basicColors);
+    supportedCaps.add(Capability.standardColors);
     if (termEnv.contains('256')) {
       supportedCaps.add(Capability.extendedColors);
     }
@@ -162,7 +165,7 @@ class TerminfoTerminalCapabilitiesDetector
     // -------------------------
     final colors = terminfo.numerics['colors'];
     if (colors != null) {
-      if (colors >= 16) supportedCaps.add(Capability.basicColors);
+      if (colors >= 16) supportedCaps.add(Capability.standardColors);
       if (colors >= 256) supportedCaps.add(Capability.extendedColors);
       // trueColors cannot be inferred from terminfo
     }
@@ -234,7 +237,7 @@ class WindowsTerminalCapabilitiesDetector extends TerminalCapabilitiesDetector {
     // -------------------------
     // Colors
     // -------------------------
-    supportedCaps.add(Capability.basicColors);
+    supportedCaps.add(Capability.standardColors);
 
     if (isWin10OrNewer || isConEmu) {
       supportedCaps.add(Capability.extendedColors);
