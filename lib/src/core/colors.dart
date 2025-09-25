@@ -27,11 +27,17 @@ abstract final class Colors {
   static const brightCyan = Color.ansi(14);
   static const brightWhite = Color.ansi(15);
 
-  /// The extended 256 ANSI colors commonly known as xterm-256 colors.
+  /// The extended 256 ANSI colors commonly known as xterm-256 colors
+  /// using the [Color.extended] constructor.
   /// However missing the first 16 colors which are available
   /// above and use [Color.ansi].
   ///
-  /// See [Color.extended].
+  /// [All colors can be found here.](docs/ansi_color_names.pdf)
+  ///
+  /// Modified from:
+  /// Copyright (c) 2023 RustyYato
+  /// MIT License
+  /// https://opensource.org/licenses/MIT
   static const Color grey0 = Color.extended(16);
   static const Color navyBlue = Color.extended(17);
   static const Color darkBlue = Color.extended(18);

@@ -341,7 +341,10 @@ extension type const Foreground._(({ForegroundStyle style, int codePoint}) _) {
 
 /// A set of characters used to draw borders and lines in terminal UIs.
 ///
-/// Source: https://github.com/onepub-dev/dart_console/blob/main/lib/src/table.dart
+/// Modified from: https://github.com/onepub-dev/dart_console
+/// which is forked from: https://github.com/timsneath/dart_console
+/// Copyright (c) 2025 onepub-dev
+/// SPDX-License-Identifier: BSD-3-Clause
 class BorderCharSet {
   final String glyphs;
   const BorderCharSet.raw(this.glyphs);
