@@ -1,6 +1,6 @@
 name: dart_terminal
 description: A library for creating TUI interfaces in dart
-version: 0.0.1
+version: 0.1.0-dev
 repository: https://github.com/bit-burger/dart-tui
 
 environment:
