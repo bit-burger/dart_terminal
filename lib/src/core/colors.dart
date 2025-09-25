@@ -32,7 +32,7 @@ abstract final class Colors {
   /// However missing the first 16 colors which are available
   /// above and use [Color.ansi].
   ///
-  /// [All colors can be found here.](docs/ansi_color_names.pdf)
+  /// [All colors can be found here.](doc/ansi_color_names.pdf)
   ///
   /// Modified from:
   /// Copyright (c) 2023 RustyYato
