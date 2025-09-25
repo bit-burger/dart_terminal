@@ -2,7 +2,7 @@
 import 'dart:io' as io;
 
 // Project imports:
-import 'package:dart_tui/core.dart';
+import 'package:dart_terminal/core.dart';
 
 /// Extension to convert [AllowedSignal] to [io.ProcessSignal].
 extension AllowedSignalsToProcessSignals on AllowedSignal {

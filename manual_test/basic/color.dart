@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_tui/ansi.dart';
+import 'package:dart_terminal/ansi.dart';
 
 void main() async {
   int plus = 0;

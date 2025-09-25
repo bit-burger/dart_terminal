@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 // Project imports:
-import 'package:dart_tui/core.dart';
+import 'package:dart_terminal/core.dart';
 
 // TODO: support intellij console
 

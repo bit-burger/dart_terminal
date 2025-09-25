@@ -1,6 +1,6 @@
 library ansi;
 
-export 'package:dart_tui/core.dart';
+export 'package:dart_terminal/core.dart';
 
 export 'src/platform/shared/native_terminal_image.dart';
 export 'src/platform/shared/terminal_capabilities.dart';

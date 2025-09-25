@@ -3,15 +3,15 @@ import 'dart:async' as async;
 import 'dart:io' as io;
 
 // Project imports:
-import 'package:dart_tui/core.dart';
-import 'package:dart_tui/src/platform/ansi/ansi_terminal_controller.dart';
-import 'package:dart_tui/src/platform/ansi/ansi_terminal_input_processor.dart';
+import 'package:dart_terminal/core.dart';
 import '../../core/style.dart';
 import '../shared/native_terminal_image.dart';
 import '../shared/signals.dart';
 import '../shared/terminal_capabilities.dart';
 import '../shared/terminal_size_tracker.dart';
 import 'ansi_escape_codes.dart' as ansi_codes;
+import 'ansi_terminal_controller.dart';
+import 'ansi_terminal_input_processor.dart';
 
 part 'ansi_terminal_logger.dart';
 part 'ansi_terminal_viewport.dart';
