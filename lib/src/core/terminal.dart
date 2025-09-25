@@ -237,7 +237,7 @@ final class MousePressEvent extends MouseEvent {
   final MouseButton button;
 
   /// The type of press event (click, double-click, etc)
-  final MousePressEventType pressType;
+  final MouseButtonState buttonState;
 
   const MousePressEvent(
     super.shiftKeyPressed,
@@ -245,7 +245,7 @@ final class MousePressEvent extends MouseEvent {
     super.ctrlKeyPressed,
     super.position,
     this.button,
-    this.pressType,
+    this.buttonState,
   );
 }
 
@@ -284,7 +284,7 @@ final class MouseScrollEvent extends MouseEvent {
 /// Note: button 4-7 are used for scrolling
 enum MouseButton { left, right, middle, button8, button9, button10, button11 }
 
-enum MousePressEventType { press, release }
+enum MouseButtonState { down, up }
 
 /// Interface for handling terminal events.
 ///
@@ -397,14 +397,22 @@ enum Capability {
   textBlinkTextDecoration,
 }
 
+// TODO: add ansi support
+enum CursorType { block, underline, verticalBar }
+
 /// Represents the state of the text cursor.
 ///
 /// Includes the cursor's position and whether it is currently blinking.
 final class CursorState {
   final Position position;
+  final CursorType type;
   final bool blinking;
 
-  CursorState({required this.position, this.blinking = true});
+  CursorState({
+    required this.position,
+    this.type = CursorType.block,
+    this.blinking = true,
+  });
 
   @override
   bool operator ==(Object other) =>

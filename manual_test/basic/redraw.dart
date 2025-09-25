@@ -35,7 +35,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
         }
       case MousePressEvent(pressType: var t, position: var pos):
         motionPos = pos;
-        if (t == MousePressEventType.release) {
+        if (t == MouseButtonState.up) {
           isPressed = false;
         } else {
           isPressed = true;

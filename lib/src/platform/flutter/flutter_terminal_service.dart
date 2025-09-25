@@ -1,0 +1,606 @@
+// Dart imports:
+import 'dart:ui';
+
+// Flutter imports:
+import 'package:flutter/material.dart' as flutter;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+
+// Project imports:
+import 'package:dart_terminal/core.dart' as term;
+import 'package:dart_terminal/core.dart' hide Offset, Colors, Rect, Size;
+import 'flutter_terminal_viewport.dart';
+import 'gesture_handling.dart';
+import 'keyboard_handling.dart';
+import 'paint_util.dart';
+
+class TerminalView extends StatefulWidget {
+  const TerminalView({
+    super.key,
+    this.textScaler,
+    this.autofocus = true,
+    this.focusNode,
+    required this.terminalListener,
+    required this.terminalViewport,
+  });
+
+  final FocusNode? focusNode;
+  final TextScaler? textScaler;
+
+  /// True if this widget will be selected as the initial focus when no other
+  /// node in its scope is currently focused.
+  final bool autofocus;
+
+  final TerminalListener terminalListener;
+  final FlutterTerminalViewport terminalViewport;
+
+  @override
+  State<TerminalView> createState() => TerminalViewState();
+}
+
+class TerminalViewState extends State<TerminalView> {
+  late FocusNode _focusNode;
+
+  final _viewportKey = GlobalKey();
+
+  // String? _composingText;
+
+  RenderTerminal get renderTerminal =>
+      _viewportKey.currentContext!.findRenderObject() as RenderTerminal;
+
+  @override
+  void initState() {
+    _focusNode = widget.focusNode ?? FocusNode();
+    super.initState();
+  }
+
+  @override
+  void didUpdateWidget(TerminalView oldWidget) {
+    if (oldWidget.focusNode != widget.focusNode) {
+      if (oldWidget.focusNode == null) {
+        _focusNode.dispose();
+      }
+      _focusNode = widget.focusNode ?? FocusNode();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = _TerminalView(
+      key: _viewportKey,
+      padding: MediaQuery.of(context).padding,
+      textScaler: widget.textScaler ?? MediaQuery.textScalerOf(context),
+      focusNode: _focusNode,
+      terminalListener: widget.terminalListener,
+      terminalViewport: widget.terminalViewport,
+    );
+
+    child = TerminalScrollGestureHandler(
+      getCellOffset: (offset) => renderTerminal.getCellOffset(offset),
+      getLineHeight: () => renderTerminal.lineHeight,
+      terminalListener: widget.terminalListener,
+      child: child,
+    );
+
+    // Only listen for key input from a hardware keyboard.
+    child = CustomKeyboardListener(
+      child: child,
+      focusNode: _focusNode,
+      autofocus: widget.autofocus,
+      terminalListener: widget.terminalListener,
+    );
+
+    child = TerminalGestureHandler(terminalView: this, child: child);
+
+    child = Container(color: Colors.black, child: child);
+
+    return child;
+  }
+
+  Rect get cursorRect {
+    return renderTerminal.cursorOffset & renderTerminal.cellSize;
+  }
+
+  Rect get globalCursorRect {
+    return renderTerminal.localToGlobal(renderTerminal.cursorOffset) &
+        renderTerminal.cellSize;
+  }
+}
+
+class _TerminalView extends LeafRenderObjectWidget {
+  const _TerminalView({
+    super.key,
+    required this.padding,
+    required this.textScaler,
+    required this.focusNode,
+    required this.terminalListener,
+    required this.terminalViewport,
+  });
+
+  final EdgeInsets padding;
+
+  final TextScaler textScaler;
+
+  final FocusNode focusNode;
+
+  final TerminalListener terminalListener;
+  final FlutterTerminalViewport terminalViewport;
+
+  @override
+  RenderTerminal createRenderObject(BuildContext context) {
+    return RenderTerminal(
+      padding: padding,
+      textScaler: textScaler,
+      focusNode: focusNode,
+      terminalListener: terminalListener,
+      terminalViewport: terminalViewport,
+    );
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, RenderTerminal renderObject) {
+    renderObject
+      ..padding = padding
+      ..textScaler = textScaler
+      ..focusNode = focusNode;
+  }
+}
+
+typedef EditableRectCallback = void Function(Rect rect, Rect caretRect);
+
+class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
+  RenderTerminal({
+    required EdgeInsets padding,
+    required TextScaler textScaler,
+    required FocusNode focusNode,
+    required this.terminalListener,
+    required this.terminalViewport,
+  }) : _padding = padding,
+       _focusNode = focusNode,
+       _painter = TerminalPainter(textScaler: textScaler);
+
+  final FlutterTerminalViewport terminalViewport;
+  final TerminalListener terminalListener;
+
+  EdgeInsets _padding;
+  set padding(EdgeInsets value) {
+    if (value == _padding) return;
+    _padding = value;
+    markNeedsLayout();
+  }
+
+  set textScaler(TextScaler value) {
+    if (value == _painter.textScaler) return;
+    _painter.textScaler = value;
+    markNeedsLayout();
+  }
+
+  FocusNode _focusNode;
+  set focusNode(FocusNode value) {
+    if (value == _focusNode) return;
+    if (attached) _focusNode.removeListener(_onFocusChange);
+    _focusNode = value;
+    if (attached) _focusNode.addListener(_onFocusChange);
+    markNeedsPaint();
+  }
+
+  term.Size? _viewportSize;
+
+  final TerminalPainter _painter;
+
+  void _onFocusChange() {
+    markNeedsPaint();
+  }
+
+  @override
+  final isRepaintBoundary = true;
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _focusNode.addListener(_onFocusChange);
+    terminalViewport.onChanged = markNeedsPaint;
+  }
+
+  @override
+  void detach() {
+    super.detach();
+    _focusNode.removeListener(_onFocusChange);
+  }
+
+  @override
+  bool hitTestSelf(Offset position) {
+    return true;
+  }
+
+  @override
+  void systemFontsDidChange() {
+    _painter.clearFontCache();
+    super.systemFontsDidChange();
+  }
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
+
+    _updateViewportSize();
+  }
+
+  /// The height of a terminal line in pixels. This includes the line spacing.
+  /// Height of the entire terminal is expected to be a multiple of this value.
+  double get lineHeight => _painter.cellSize.height;
+
+  /// Get the top-left corner of the cell at [cellOffset] in pixels.
+  Offset getOffset(Position cellOffset) {
+    final row = cellOffset.y;
+    final col = cellOffset.x;
+    final x = col * _painter.cellSize.width;
+    final y = row * _painter.cellSize.height;
+    return Offset(x + _padding.left, y + _padding.top);
+  }
+
+  /// Get the [CellOffset] of the cell that [offset] is in.
+  Position getCellOffset(Offset offset) {
+    // TODO: CellOffset = Position beide fangen mit 0,0 an
+    final x = offset.dx - _padding.left;
+    final y = offset.dy - _padding.top;
+    final row = y ~/ _painter.cellSize.height;
+    final col = x ~/ _painter.cellSize.width;
+    return Position(
+      col.clamp(0, terminalViewport.size.width - 1),
+      row.clamp(0, terminalViewport.size.height - 1),
+    );
+  }
+
+  /// Send a mouse event at [offset] with [button] being currently in [buttonState].
+  void mouseEvent(
+    MouseButton button,
+    MouseButtonState buttonState,
+    Offset offset,
+  ) {
+    final position = getCellOffset(offset);
+    terminalListener.mouseEvent(
+      MousePressEvent(false, false, false, position, button, buttonState),
+    );
+  }
+
+  /// Update the viewport size in cells based on the current widget size in
+  /// pixels.
+  void _updateViewportSize() {
+    if (size <= _painter.cellSize) {
+      return;
+    }
+
+    final viewportSize = term.Size(
+      size.width ~/ _painter.cellSize.width,
+      _viewportHeight ~/ _painter.cellSize.height,
+    );
+
+    if (_viewportSize != viewportSize) {
+      _viewportSize = viewportSize;
+      _resizeTerminalIfNeeded();
+    }
+  }
+
+  /// Notify the underlying terminal that the viewport size has changed.
+  void _resizeTerminalIfNeeded() {
+    if (_viewportSize != null) {
+      terminalListener.screenResize(_viewportSize!);
+    }
+  }
+
+  bool get _shouldShowCursor {
+    return terminalViewport.cursor != null;
+  }
+
+  double get _viewportHeight {
+    return size.height - _padding.vertical;
+  }
+
+  /// The offset of the cursor from the top left corner of this render object.
+  Offset get cursorOffset {
+    return Offset(
+      terminalViewport.cursor!.position.x * _painter.cellSize.width,
+      terminalViewport.cursor!.position.y * _painter.cellSize.height,
+    );
+  }
+
+  Size get cellSize {
+    return _painter.cellSize;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (!terminalViewport.hasSize) terminalViewport.updateSize(_viewportSize!);
+    _paint(context, offset);
+    context.setWillChangeHint();
+  }
+
+  void _paint(PaintingContext context, Offset offset) {
+    final canvas = context.canvas;
+
+    final lines = terminalViewport.buffer;
+    final charHeight = _painter.cellSize.height;
+
+    final firstLineOffset = 0 - _padding.top;
+    final lastLineOffset = size.height + _padding.bottom;
+
+    final firstLine = firstLineOffset ~/ charHeight;
+    final lastLine = lastLineOffset ~/ charHeight;
+
+    final effectFirstLine = firstLine.clamp(0, lines.length - 1);
+    final effectLastLine = lastLine.clamp(0, lines.length - 1);
+
+    for (var i = effectFirstLine; i <= effectLastLine; i++) {
+      _painter.paintLine(
+        canvas,
+        offset.translate(0, (i * charHeight).truncateToDouble()),
+        lines[i],
+      );
+    }
+
+    if (_shouldShowCursor) {
+      _painter.paintCursor(
+        canvas,
+        offset + cursorOffset,
+        cursorType: terminalViewport.cursor!.type,
+        hasFocus: _focusNode.hasFocus,
+      );
+    }
+  }
+}
+
+/// Encapsulates the logic for painting various terminal elements.
+class TerminalPainter {
+  TerminalPainter({required TextScaler textScaler}) : _textScaler = textScaler;
+
+  /// A lookup table from terminal colors to Flutter colors.
+  late var _colorPalette = PaletteBuilder(defaultTheme).build();
+
+  /// Size of each character in the terminal.
+  late var _cellSize = _measureCharSize();
+
+  /// The cached for cells in the terminal. Should be cleared when the same
+  /// cell no longer produces the same visual output. For example, when
+  /// [_textStyle] is changed, or when the system font changes.
+  final _paragraphCache = ParagraphCache(10240);
+
+  TerminalStyle get textStyle => _textStyle;
+  TerminalStyle _textStyle = TerminalStyle();
+  set textStyle(TerminalStyle value) {
+    if (value == _textStyle) return;
+    _textStyle = value;
+    _cellSize = _measureCharSize();
+    _paragraphCache.clear();
+  }
+
+  TextScaler get textScaler => _textScaler;
+  TextScaler _textScaler = TextScaler.linear(1.0);
+  set textScaler(TextScaler value) {
+    if (value == _textScaler) return;
+    _textScaler = value;
+    _cellSize = _measureCharSize();
+    _paragraphCache.clear();
+  }
+
+  TerminalTheme get theme => _theme;
+  TerminalTheme _theme = defaultTheme;
+  set theme(TerminalTheme value) {
+    if (value == _theme) return;
+    _theme = value;
+    _colorPalette = PaletteBuilder(value).build();
+    _paragraphCache.clear();
+  }
+
+  Size _measureCharSize() {
+    const test = 'mmmmmmmmmm';
+
+    final textStyle = _textStyle.toTextStyle();
+    final builder = ParagraphBuilder(textStyle.getParagraphStyle());
+    builder.pushStyle(textStyle.getTextStyle(textScaler: _textScaler));
+    builder.addText(test);
+
+    final paragraph = builder.build();
+    paragraph.layout(ParagraphConstraints(width: double.infinity));
+
+    final result = Size(
+      paragraph.maxIntrinsicWidth / test.length,
+      paragraph.height,
+    );
+
+    paragraph.dispose();
+    return result;
+  }
+
+  /// The size of each character in the terminal.
+  Size get cellSize => _cellSize;
+
+  /// When the set of font available to the system changes, call this method to
+  /// clear cached state related to font rendering.
+  void clearFontCache() {
+    _cellSize = _measureCharSize();
+    _paragraphCache.clear();
+  }
+
+  /// Paints the cursor based on the current cursor type.
+  void paintCursor(
+    Canvas canvas,
+    Offset offset, {
+    required CursorType cursorType,
+    bool hasFocus = true,
+  }) {
+    final paint = Paint()
+      ..color = _theme.cursor
+      ..strokeWidth = 1;
+
+    if (!hasFocus) {
+      paint.style = PaintingStyle.stroke;
+      canvas.drawRect(offset & _cellSize, paint);
+      return;
+    }
+
+    switch (cursorType) {
+      case CursorType.block:
+        paint.style = PaintingStyle.fill;
+        canvas.drawRect(offset & _cellSize, paint);
+        return;
+      case CursorType.underline:
+        return canvas.drawLine(
+          Offset(offset.dx, _cellSize.height - 1),
+          Offset(offset.dx + _cellSize.width, _cellSize.height - 1),
+          paint,
+        );
+      case CursorType.verticalBar:
+        return canvas.drawLine(
+          Offset(offset.dx, 0),
+          Offset(offset.dx, _cellSize.height),
+          paint,
+        );
+    }
+  }
+
+  /// Paints [line] to [canvas] at [offset]. The x offset of [offset] is usually
+  /// 0, and the y offset is the top of the line.
+  void paintLine(Canvas canvas, Offset offset, BufferLine line) {
+    final cellData = CellData.empty();
+    final cellWidth = _cellSize.width;
+
+    for (var i = 0; i < line.length; i++) {
+      line.getCellData(i, cellData);
+
+      final charWidth = cellData.content >> CellContent.widthShift;
+      final cellOffset = offset.translate(i * cellWidth, 0);
+
+      paintCell(canvas, cellOffset, cellData);
+
+      if (charWidth == 2) {
+        i++;
+      }
+    }
+  }
+
+  @pragma('vm:prefer-inline')
+  void paintCell(Canvas canvas, Offset offset, CellData cellData) {
+    paintCellBackground(canvas, offset, cellData);
+    paintCellForeground(canvas, offset, cellData);
+  }
+
+  /// Paints the character in the cell represented by [cellData] to [canvas] at
+  /// [offset].
+  @pragma('vm:prefer-inline')
+  void paintCellForeground(Canvas canvas, Offset offset, CellData cellData) {
+    final charCode = cellData.content & CellContent.codepointMask;
+    if (charCode == 0) return;
+
+    final cacheKey = cellData.getHash() ^ _textScaler.hashCode;
+    var paragraph = _paragraphCache.getLayoutFromCache(cacheKey);
+
+    if (paragraph == null) {
+      final cellFlags = cellData.flags;
+
+      var color = cellFlags & CellFlags.inverse == 0
+          ? resolveForegroundColor(cellData.foreground)
+          : resolveBackgroundColor(cellData.background);
+
+      if (cellData.flags & CellFlags.faint != 0) {
+        color = color.withOpacity(0.5);
+      }
+
+      final style = _textStyle.toTextStyle(
+        color: color,
+        bold: cellFlags & CellFlags.bold != 0,
+        italic: cellFlags & CellFlags.italic != 0,
+        underline: cellFlags & CellFlags.underline != 0,
+      );
+
+      // Flutter does not draw an underline below a space which is not between
+      // other regular characters. As only single characters are drawn, this
+      // will never produce an underline below a space in the terminal. As a
+      // workaround the regular space CodePoint 0x20 is replaced with
+      // the CodePoint 0xA0. This is a non breaking space and a underline can be
+      // drawn below it.
+      var char = String.fromCharCode(charCode);
+      if (cellFlags & CellFlags.underline != 0 && charCode == 0x20) {
+        char = String.fromCharCode(0xA0);
+      }
+
+      paragraph = _paragraphCache.performAndCacheLayout(
+        char,
+        style,
+        _textScaler,
+        cacheKey,
+      );
+    }
+
+    canvas.drawParagraph(paragraph, offset);
+  }
+
+  /// Paints the background of a cell represented by [cellData] to [canvas] at
+  /// [offset].
+  @pragma('vm:prefer-inline')
+  void paintCellBackground(Canvas canvas, Offset offset, CellData cellData) {
+    late flutter.Color color;
+    final colorType = cellData.background & CellColor.typeMask;
+
+    if (cellData.flags & CellFlags.inverse != 0) {
+      color = resolveForegroundColor(cellData.foreground);
+    } else if (colorType == CellColor.normal) {
+      return;
+    } else {
+      color = resolveBackgroundColor(cellData.background);
+    }
+
+    final paint = Paint()..color = color;
+    final doubleWidth = cellData.content >> CellContent.widthShift == 2;
+    final widthScale = doubleWidth ? 2 : 1;
+    final size = Size(_cellSize.width * widthScale + 1, _cellSize.height);
+    canvas.drawRect(offset & size, paint);
+  }
+
+  /// Get the effective foreground color for a cell from information encoded in
+  /// [cellColor].
+  @pragma('vm:prefer-inline')
+  flutter.Color resolveForegroundColor(int cellColor) {
+    final colorType = cellColor & CellColor.typeMask;
+    final colorValue = cellColor & CellColor.valueMask;
+
+    switch (colorType) {
+      case CellColor.normal:
+        return _theme.foreground;
+      case CellColor.named:
+      case CellColor.palette:
+        return _colorPalette[colorValue];
+      case CellColor.rgb:
+      default:
+        return flutter.Color(colorValue | 0xFF000000);
+    }
+  }
+
+  /// Get the effective background color for a cell from information encoded in
+  /// [cellColor].
+  @pragma('vm:prefer-inline')
+  flutter.Color resolveBackgroundColor(int cellColor) {
+    final colorType = cellColor & CellColor.typeMask;
+    final colorValue = cellColor & CellColor.valueMask;
+
+    switch (colorType) {
+      case CellColor.normal:
+        return _theme.background;
+      case CellColor.named:
+      case CellColor.palette:
+        return _colorPalette[colorValue];
+      case CellColor.rgb:
+      default:
+        return flutter.Color(colorValue | 0xFF000000);
+    }
+  }
+}

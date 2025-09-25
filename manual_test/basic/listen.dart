@@ -53,7 +53,7 @@ class ControlTerminalInputListener implements TerminalListener {
     switch (event) {
       case MousePressEvent(pressType: var t, button: var b, position: var pos):
         final bs = b.toString().substring(12);
-        if (t == MousePressEventType.press) {
+        if (t == MouseButtonState.down) {
           _print("press($bs,x:${pos.x},y:${pos.y})");
         } else {
           _print("release($bs,x:${pos.x},y:${pos.y})");

@@ -313,8 +313,8 @@ final class _WaitingAnsiTerminalInputProcessor
         _ => throw StateError("Release button cannot be pressed"),
       };
       final type = isPrimaryAction
-          ? MousePressEventType.press
-          : MousePressEventType.release;
+          ? MouseButtonState.down
+          : MouseButtonState.up;
       return MousePressEvent(shift, meta, ctrl, pos, btn, type);
     }
   }
@@ -424,8 +424,8 @@ final class _SimpleAnsiTerminalInputProcessor
           _ => throw StateError("Release button cannot be pressed"),
         };
         final type = isPrimaryAction
-            ? MousePressEventType.press
-            : MousePressEventType.release;
+            ? MouseButtonState.down
+            : MouseButtonState.up;
         listener?.call(MousePressEvent(shift, meta, ctrl, pos, btn, type));
       }
       return true;
