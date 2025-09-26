@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 // Project imports:
 import 'package:dart_terminal/core.dart' as term;
 import 'package:dart_terminal/core.dart' hide Offset, Colors, Rect, Size;
+import 'buffer.dart';
 import 'flutter_terminal_viewport.dart';
 import 'gesture_handling.dart';
 import 'keyboard_handling.dart';
@@ -328,7 +329,7 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
   void _paint(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
 
-    final lines = terminalViewport.buffer;
+    final lines = terminalViewport.visibleBuffer;
     final charHeight = _painter.cellSize.height;
 
     final firstLineOffset = 0 - _padding.top;
@@ -512,7 +513,7 @@ class TerminalPainter {
           : resolveBackgroundColor(cellData.background);
 
       if (cellData.flags & CellFlags.faint != 0) {
-        color = color.withOpacity(0.5);
+        color = color.withValues(alpha: 0.5);
       }
 
       final style = _textStyle.toTextStyle(

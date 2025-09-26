@@ -20,12 +20,12 @@ void main() async {
   );
   await Future.delayed(Duration(seconds: 3));
   print("miaow");
-  viewport.buffer[5].setCodePoint(5, "a".codeUnitAt(0));
-  viewport.buffer[5].setCodePoint(2, "c".codeUnitAt(0));
+  viewport.drawingBuffer[5].setCodePoint(5, "a".codeUnitAt(0));
+  viewport.drawingBuffer[5].setCodePoint(2, "c".codeUnitAt(0));
   viewport.updateScreen();
   for (int i = 0; i < 1000000; i++) {
     await Future.delayed(Duration(seconds: 1));
-    viewport.buffer[5].setCodePoint(i, "a".codeUnitAt(0));
+    viewport.drawingBuffer[5].setCodePoint(i, "a".codeUnitAt(0));
     viewport.updateScreen();
   }
 }

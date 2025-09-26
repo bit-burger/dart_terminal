@@ -1,5 +1,5 @@
 // Project imports:
-import 'flutter_terminal_viewport.dart';
+import 'buffer.dart';
 
 class CursorStyle {
   int foreground;
