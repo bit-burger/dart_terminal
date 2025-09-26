@@ -1,10 +1,9 @@
 part of 'ansi_terminal_service.dart';
 
 class _AnsiTerminalLogger extends TerminalLogger {
-  @override
-  final AnsiTerminalService service;
+  final AnsiTerminalService _service;
 
-  _AnsiTerminalLogger._(this.service);
+  _AnsiTerminalLogger._(this._service);
 
   @override
   void deleteLastLine(int count) {
@@ -21,5 +20,5 @@ class _AnsiTerminalLogger extends TerminalLogger {
   }
 
   @override
-  int get width => service._sizeTracker.currentSize.width;
+  int get width => _service._sizeTracker.currentSize.width;
 }

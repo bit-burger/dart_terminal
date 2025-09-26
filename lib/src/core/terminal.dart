@@ -63,9 +63,6 @@ abstract class TerminalLogger {
   bool get isActive => _isActive;
   bool _isActive = false;
 
-  // TODO: remove from public api
-  TerminalService get service;
-
   int get width;
 
   void deleteLastLine(int count);
@@ -84,8 +81,6 @@ abstract class TerminalLogger {
 abstract class TerminalViewport implements TerminalCanvas {
   bool get isActive => _isActive;
   bool _isActive = false;
-
-  TerminalService get service;
 
   CursorState? get cursor;
   set cursor(CursorState state);

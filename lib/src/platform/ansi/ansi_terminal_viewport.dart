@@ -86,19 +86,18 @@ List<_TerminalCell> _rowGen(int length) =>
     List.generate(length, (_) => _TerminalCell());
 
 class _AnsiTerminalViewport extends TerminalViewport {
-  @override
-  final AnsiTerminalService service;
-  AnsiTerminalController get _controller => service._controller;
+  final AnsiTerminalService _service;
+  AnsiTerminalController get _controller => _service._controller;
 
   final List<List<_TerminalCell>> _screenBuffer = [];
   final List<bool> _changeList = [];
   Size _dataSize = Size(0, 0);
   Color? _backgroundFill;
 
-  _AnsiTerminalViewport._(this.service);
+  _AnsiTerminalViewport._(this._service);
 
   @override
-  Size get size => service._sizeTracker.currentSize;
+  Size get size => _service._sizeTracker.currentSize;
 
   bool _initialActivation = true;
   void _onActivationEvent() {
@@ -159,12 +158,12 @@ class _AnsiTerminalViewport extends TerminalViewport {
   set cursor(CursorState? cursor) {
     if (cursor != null) {
       if (cursor.blinking != _cursorBlinking) {
-        service._controller.changeCursorBlinking(blinking: cursor.blinking);
+        _service._controller.changeCursorBlinking(blinking: cursor.blinking);
         _cursorBlinking = cursor.blinking;
       }
       if (cursor.position != _cursorPosition) {
         if (_cursorPosition == null) {
-          service._controller.changeCursorVisibility(hiding: false);
+          _service._controller.changeCursorVisibility(hiding: false);
         }
         _controller.setCursorPosition(
           cursor.position.x + 1,

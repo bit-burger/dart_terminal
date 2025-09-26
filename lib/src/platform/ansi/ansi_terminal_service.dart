@@ -24,8 +24,10 @@ class AnsiTerminalService extends TerminalService {
   final AnsiTerminalController _controller = AnsiTerminalController();
 
   final List<async.StreamSubscription<Object>> _subscriptions = [];
-  late final _AnsiTerminalViewport viewport;
-  late final _AnsiTerminalLogger logger;
+  late final _AnsiTerminalViewport _viewport;
+  TerminalViewport get viewport => _viewport;
+  late final _AnsiTerminalLogger _logger;
+  TerminalLogger get logger => _logger;
 
   /// Creates a new factory with specific capability detection and size tracking.
   AnsiTerminalService({
@@ -33,8 +35,8 @@ class AnsiTerminalService extends TerminalService {
     required TerminalSizeTracker sizeTracker,
   }) : _capabilitiesDetector = capabilitiesDetector,
        _sizeTracker = sizeTracker {
-    viewport = _AnsiTerminalViewport._(this);
-    logger = _AnsiTerminalLogger._(this);
+    _viewport = _AnsiTerminalViewport._(this);
+    _logger = _AnsiTerminalLogger._(this);
   }
 
   /// Creates a factory with automatic configuration
@@ -82,7 +84,7 @@ class AnsiTerminalService extends TerminalService {
 
   @override
   Future<void> detach() async {
-    final viewPortWasActive = viewport.isActive;
+    final viewPortWasActive = _viewport.isActive;
     super.detach();
     for (final subscription in _subscriptions) {
       await subscription.cancel();
@@ -106,7 +108,7 @@ class AnsiTerminalService extends TerminalService {
 
   @override
   void loggerMode() {
-    if (logger.isActive) return;
+    if (_logger.isActive) return;
     super.loggerMode();
     _controller
       ..changeLineWrappingMode(enable: true)
@@ -116,13 +118,13 @@ class AnsiTerminalService extends TerminalService {
 
   @override
   void viewPortMode() {
-    if (viewport.isActive) return;
+    if (_viewport.isActive) return;
     super.viewPortMode();
     _controller
       ..changeLineWrappingMode(enable: false)
       ..changeScreenMode(alternateBuffer: true)
       ..changeMouseTrackingMode(enable: true);
-    viewport._onActivationEvent();
+    _viewport._onActivationEvent();
   }
 
   void _onInputEvent(Object event) {
@@ -140,7 +142,7 @@ class AnsiTerminalService extends TerminalService {
   }
 
   void _onResizeEvent() {
-    if (viewport.isActive) viewport._onResizeEvent();
+    if (_viewport.isActive) _viewport._onResizeEvent();
     listener?.screenResize(_sizeTracker.currentSize);
   }
 
