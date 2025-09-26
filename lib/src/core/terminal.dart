@@ -83,7 +83,7 @@ abstract class TerminalViewport implements TerminalCanvas {
   bool _isActive = false;
 
   CursorState? get cursor;
-  set cursor(CursorState state);
+  set cursor(CursorState? state);
 
   /// Draws the background of the terminal window.
   void drawColor({Color color, bool optimizeByClear = true});
