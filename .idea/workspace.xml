@@ -4,11 +4,19 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2b60bcee-cb88-4a07-a3b8-b6c208edb22e" name="Default Changelist" comment="add documentation for ansi_terminal_controller.dart">
-      <change beforePath="$PROJECT_DIR$/lib/core.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/core/window.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/core/terminal.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_input_processor.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_input_processor.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_screen.dart" afterDir="false" />
+    <list default="true" id="2b60bcee-cb88-4a07-a3b8-b6c208edb22e" name="Default Changelist" comment="change terminal api">
+      <change beforePath="$PROJECT_DIR$/lib/src/core/geometry.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/core/geometry.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/core/graphics.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/core/graphics.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/core/style.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/core/style.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_viewport.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_viewport.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/flutter/buffer.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/flutter/buffer.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/flutter/cursor_style.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/flutter/flutter_terminal_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/flutter/terminal_view.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/flutter/flutter_terminal_viewport.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/flutter/flutter_terminal_viewport.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/flutter/gesture_handling.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/flutter/gesture_handling.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/src/platform/flutter/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/platform/flutter/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manual_test/image/image_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/manual_test/image/image_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,6 +35,19 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <excluded-from-favorite>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="main" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </excluded-from-favorite>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -45,7 +66,7 @@
   </component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/bit-burger/dart-tui&quot;,
+    &quot;url&quot;: &quot;https://github.com/bit-burger/dart_terminal.git&quot;,
     &quot;accountId&quot;: &quot;402d615c-73ef-4ae8-b4b6-a147206f6d2a&quot;
   }
 }</component>
@@ -60,69 +81,68 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Dart Command Line App.flutter.dart.executor": "Run",
-    "Dart Command Line App.screen_buffer_speed_testing.dart.executor": "Run",
-    "Dart Command Line App.terminfo.dart.executor": "Run",
-    "Dart Command Line App.test.dart.executor": "Debug",
-    "Dart Command Line App.testtest.dart.executor": "Debug",
-    "Dart Command Line App.testtst.dart.executor": "Run",
-    "Dart Remote Debug.Unnamed.executor": "Debug",
-    "Flutter Test.tests in color_test.dart.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "com.google.services.firebase.aqiPopupShown": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/tonyborchert/Documents/Flutter/dart-tui/manual_test/border",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Dart Command Line App.colors_script.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.flutter.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.screen_buffer_speed_testing.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.terminfo.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Command Line App.test.dart.executor&quot;: &quot;Debug&quot;,
+    &quot;Dart Command Line App.testtest.dart.executor&quot;: &quot;Debug&quot;,
+    &quot;Dart Command Line App.testtst.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Dart Remote Debug.Unnamed.executor&quot;: &quot;Debug&quot;,
+    &quot;Flutter Test.tests in color_test.dart.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter.main.dart (1).executor&quot;: &quot;Debug&quot;,
+    &quot;Flutter.main.dart.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;com.google.services.firebase.aqiPopupShown&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/tonyborchert/Documents/Flutter/dart-tui/lib/src/core&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/lib/src/core" />
       <recent name="$PROJECT_DIR$/manual_test/border" />
       <recent name="$PROJECT_DIR$/manual_test" />
       <recent name="$PROJECT_DIR$/lib/ansi" />
       <recent name="$PROJECT_DIR$/package" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs" />
+      <recent name="$PROJECT_DIR$/scripts" />
+      <recent name="$PROJECT_DIR$/lib/src/core" />
       <recent name="$PROJECT_DIR$/manual_test/stupid" />
       <recent name="$PROJECT_DIR$/lib/src" />
-      <recent name="$PROJECT_DIR$/lib/platform/shared" />
-      <recent name="$PROJECT_DIR$/lib/platform/ansi" />
-      <recent name="$PROJECT_DIR$/lib/platform" />
     </key>
   </component>
-  <component name="RunManager" selected="Dart Command Line App.packages.dart">
+  <component name="RunManager" selected="Flutter.main.dart (1)">
     <configuration name="dart_tui.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" nameIsGenerated="true">
       <option name="filePath" value="$PROJECT_DIR$/packages/xxtestbinaryofsorts/dart_tui.dart" />
       <option name="workingDirectory" value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
-    <configuration name="flutter.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
-      <option name="VMOptions" value="--enable-experiment=const-functions" />
-      <option name="filePath" value="$PROJECT_DIR$/lib/flutter.dart" />
+    <configuration name="generate_colors_constants.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/scripts/generate_colors_constants.dart" />
       <option name="workingDirectory" value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
     <configuration name="packages.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
       <option name="filePath" value="$USER_HOME$/Downloads/packages/bin/packages.dart" />
       <option name="workingDirectory" value="$USER_HOME$/Downloads/packages" />
-      <method v="2" />
-    </configuration>
-    <configuration name="terminfo.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
-      <option name="filePath" value="$PROJECT_DIR$/lib/src/platform/shared/terminfo.dart" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
     <configuration name="testtest.dart" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application" temporary="true" nameIsGenerated="true">
@@ -144,6 +164,14 @@
       <option name="scope" value="FOLDER" />
       <method v="2" />
     </configuration>
+    <configuration name="main.dart (1)" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/lib/src/platform/flutter/main.dart" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
+      <option name="filePath" value="$PROJECT_DIR$/lib/src/platform/flutter/main.dart" />
+      <method v="2" />
+    </configuration>
     <configuration name="tests in color_test.dart" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true">
       <option name="testFile" value="$PROJECT_DIR$/test/manual/color_test.dart" />
       <option name="useRegexp" value="false" />
@@ -152,21 +180,22 @@
     <list>
       <item itemvalue="Dart Command Line App.packages.dart" />
       <item itemvalue="Dart Command Line App.dart_tui.dart" />
+      <item itemvalue="Dart Command Line App.generate_colors_constants.dart" />
       <item itemvalue="Dart Command Line App.testtest.dart" />
       <item itemvalue="Dart Command Line App.testtst.dart" />
-      <item itemvalue="Dart Command Line App.terminfo.dart" />
-      <item itemvalue="Dart Command Line App.flutter.dart" />
       <item itemvalue="Dart Remote Debug.Unnamed" />
       <item itemvalue="Dart Test.Tests in dart-tui" />
+      <item itemvalue="Flutter.main.dart" />
+      <item itemvalue="Flutter.main.dart (1)" />
       <item itemvalue="Flutter Test.tests in color_test.dart" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Flutter.main.dart (1)" />
+        <item itemvalue="Flutter.main.dart" />
+        <item itemvalue="Dart Command Line App.generate_colors_constants.dart" />
         <item itemvalue="Dart Command Line App.testtest.dart" />
         <item itemvalue="Dart Command Line App.testtst.dart" />
-        <item itemvalue="Flutter Test.tests in color_test.dart" />
-        <item itemvalue="Dart Command Line App.terminfo.dart" />
-        <item itemvalue="Dart Command Line App.flutter.dart" />
       </list>
     </recent_temporary>
   </component>
@@ -178,38 +207,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1690025225924</updated>
-    </task>
-    <task id="LOCAL-00001" summary="commit everything">
-      <option name="closed" value="true" />
-      <created>1757361043117</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1757361043117</updated>
-    </task>
-    <task id="LOCAL-00002" summary="add mouse and focusin/focusout events to ansi terminal window">
-      <option name="closed" value="true" />
-      <created>1757370579012</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1757370579012</updated>
-    </task>
-    <task id="LOCAL-00003" summary="Change structure AnsiTerminalWindow">
-      <option name="closed" value="true" />
-      <created>1757539468616</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1757539468616</updated>
-    </task>
-    <task id="LOCAL-00004" summary="fix error on enable mouse support">
-      <option name="closed" value="true" />
-      <created>1757622881248</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1757622881248</updated>
     </task>
     <task id="LOCAL-00005" summary="basic draw changes support">
       <option name="closed" value="true" />
@@ -507,7 +504,103 @@
       <option name="project" value="LOCAL" />
       <updated>1758488927724</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="change core api">
+      <option name="closed" value="true" />
+      <created>1758728616273</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1758728616274</updated>
+    </task>
+    <task id="LOCAL-00043" summary="fix the image test">
+      <option name="closed" value="true" />
+      <created>1758729600417</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1758729600417</updated>
+    </task>
+    <task id="LOCAL-00044" summary="improve the manual image test">
+      <option name="closed" value="true" />
+      <created>1758729740038</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1758729740038</updated>
+    </task>
+    <task id="LOCAL-00045" summary="improve the manual image test">
+      <option name="closed" value="true" />
+      <created>1758730409353</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1758730409353</updated>
+    </task>
+    <task id="LOCAL-00046" summary="refactor: rename drawBackground to drawColor for clarity and fix it in ansi">
+      <option name="closed" value="true" />
+      <created>1758730493442</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1758730493442</updated>
+    </task>
+    <task id="LOCAL-00047" summary="refactor: rename destroy to detach and update mode switching methods for clarity and improve detaching">
+      <option name="closed" value="true" />
+      <created>1758736268852</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1758736268852</updated>
+    </task>
+    <task id="LOCAL-00048" summary="change colors to the Color extension type">
+      <option name="closed" value="true" />
+      <created>1758817418812</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1758817418812</updated>
+    </task>
+    <task id="LOCAL-00049" summary="rename package to dart_terminal">
+      <option name="closed" value="true" />
+      <created>1758819577087</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1758819577087</updated>
+    </task>
+    <task id="LOCAL-00050" summary="rename package to dart_terminal">
+      <option name="closed" value="true" />
+      <created>1758819588883</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1758819588885</updated>
+    </task>
+    <task id="LOCAL-00051" summary="add license">
+      <option name="closed" value="true" />
+      <created>1758821349423</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1758821349423</updated>
+    </task>
+    <task id="LOCAL-00052" summary="change docs/ to doc/">
+      <option name="closed" value="true" />
+      <created>1758822678870</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1758822678871</updated>
+    </task>
+    <task id="LOCAL-00053" summary="change versioning">
+      <option name="closed" value="true" />
+      <created>1758822991269</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1758822991269</updated>
+    </task>
+    <option name="localTasksCounter" value="54" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -522,18 +615,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="major improvements for window" />
-    <MESSAGE value="fix border test" />
-    <MESSAGE value="delete unnecesary test files" />
-    <MESSAGE value="improve api" />
-    <MESSAGE value="improve api of terminal window" />
-    <MESSAGE value="improve api of terminal window factory" />
-    <MESSAGE value="improve AnsiTerminalController API" />
-    <MESSAGE value="improve input processesing" />
-    <MESSAGE value="improve window api" />
-    <MESSAGE value="change that background overrides forground on screen" />
-    <MESSAGE value="add assertion in terminal screen" />
-    <MESSAGE value="improve listen test" />
     <MESSAGE value="fix input processor" />
     <MESSAGE value="improve mouse event naming" />
     <MESSAGE value="improve screen api and performance" />
@@ -547,6 +628,29 @@
     <MESSAGE value="a" />
     <MESSAGE value="add more configuration" />
     <MESSAGE value="add documentation for ansi_terminal_controller.dart" />
-    <option name="LAST_COMMIT_MESSAGE" value="add documentation for ansi_terminal_controller.dart" />
+    <MESSAGE value="change core api" />
+    <MESSAGE value="fix the image test" />
+    <MESSAGE value="improve the manual image test" />
+    <MESSAGE value="refactor: rename drawBackground to drawColor for clarity and fix it in ansi" />
+    <MESSAGE value="refactor: rename destroy to detach and update mode switching methods for clarity and improve detaching" />
+    <MESSAGE value="change colors to the Color extension type" />
+    <MESSAGE value="rename package to dart_terminal" />
+    <MESSAGE value="add license" />
+    <MESSAGE value="change docs/ to doc/" />
+    <MESSAGE value="first working version of new xterm integration" />
+    <MESSAGE value="change versioning" />
+    <MESSAGE value="change terminal api" />
+    <option name="LAST_COMMIT_MESSAGE" value="change terminal api" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/src/platform/ansi/ansi_terminal_viewport.dart</url>
+          <line>390</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

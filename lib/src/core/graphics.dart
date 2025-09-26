@@ -49,6 +49,7 @@ abstract class TerminalCanvas {
   ///
   /// The [text] will be rendered starting at [position], applying the optional
   /// [style] for text formatting.
+  // TODO: change to TextStyle
   void drawText({
     required String text,
     required Position position,

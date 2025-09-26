@@ -8,8 +8,9 @@ import 'package:flutter/rendering.dart';
 
 // Project imports:
 import 'package:dart_terminal/core.dart' as term;
-import 'package:dart_terminal/core.dart' hide Offset, Colors, Rect, Size;
+import 'package:dart_terminal/core.dart' hide Offset, Color, Colors, Rect, Size;
 import 'buffer.dart';
+import '../../core/style.dart' as s;
 import 'flutter_terminal_viewport.dart';
 import 'gesture_handling.dart';
 import 'keyboard_handling.dart';
@@ -295,6 +296,7 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
   /// Notify the underlying terminal that the viewport size has changed.
   void _resizeTerminalIfNeeded() {
     if (_viewportSize != null) {
+      terminalViewport.updateSize(_viewportSize!);
       terminalListener.screenResize(_viewportSize!);
     }
   }
@@ -472,16 +474,24 @@ class TerminalPainter {
   /// Paints [line] to [canvas] at [offset]. The x offset of [offset] is usually
   /// 0, and the y offset is the top of the line.
   void paintLine(Canvas canvas, Offset offset, BufferLine line) {
-    final cellData = CellData.empty();
     final cellWidth = _cellSize.width;
 
     for (var i = 0; i < line.length; i++) {
-      line.getCellData(i, cellData);
-
-      final charWidth = cellData.content >> CellContent.widthShift;
+      final contentData = line.getContent(i);
+      final fgColorData = line.getForeground(i);
+      final bgColorData = line.getBackground(i);
+      final textEffectsData = line.getAttributes(i);
+      final charWidth = contentData >> CellContent.widthShift;
       final cellOffset = offset.translate(i * cellWidth, 0);
 
-      paintCell(canvas, cellOffset, cellData);
+      paintCell(
+        canvas,
+        cellOffset,
+        contentData,
+        fgColorData,
+        bgColorData,
+        textEffectsData,
+      );
 
       if (charWidth == 2) {
         i++;
@@ -490,37 +500,55 @@ class TerminalPainter {
   }
 
   @pragma('vm:prefer-inline')
-  void paintCell(Canvas canvas, Offset offset, CellData cellData) {
-    paintCellBackground(canvas, offset, cellData);
-    paintCellForeground(canvas, offset, cellData);
+  void paintCell(
+    Canvas canvas,
+    Offset offset,
+    int contentData,
+    int fgColorData,
+    int bgColorData,
+    int textEffectsData,
+  ) {
+    paintCellBackground(canvas, offset, bgColorData, contentData);
+    paintCellForeground(
+      canvas,
+      offset,
+      fgColorData,
+      contentData,
+      textEffectsData,
+    );
   }
 
   /// Paints the character in the cell represented by [cellData] to [canvas] at
   /// [offset].
   @pragma('vm:prefer-inline')
-  void paintCellForeground(Canvas canvas, Offset offset, CellData cellData) {
-    final charCode = cellData.content & CellContent.codepointMask;
+  void paintCellForeground(
+    Canvas canvas,
+    Offset offset,
+    int colorData,
+    int contentData,
+    int textEffectsData,
+  ) {
+    final charCode = contentData & CellContent.codepointMask;
     if (charCode == 0) return;
 
-    final cacheKey = cellData.getHash() ^ _textScaler.hashCode;
+    final cacheKey =
+        hashValues(colorData, contentData, textEffectsData) ^
+        _textScaler.hashCode;
     var paragraph = _paragraphCache.getLayoutFromCache(cacheKey);
 
     if (paragraph == null) {
-      final cellFlags = cellData.flags;
+      Color color = resolveColor(colorData);
+      final textEffects = s.textEffectsFromData(textEffectsData);
 
-      var color = cellFlags & CellFlags.inverse == 0
-          ? resolveForegroundColor(cellData.foreground)
-          : resolveBackgroundColor(cellData.background);
-
-      if (cellData.flags & CellFlags.faint != 0) {
+      if (s.TextEffect.faint.containedIn(textEffects)) {
         color = color.withValues(alpha: 0.5);
       }
 
       final style = _textStyle.toTextStyle(
         color: color,
-        bold: cellFlags & CellFlags.bold != 0,
-        italic: cellFlags & CellFlags.italic != 0,
-        underline: cellFlags & CellFlags.underline != 0,
+        bold: s.TextEffect.intense.containedIn(textEffects),
+        italic: s.TextEffect.italic.containedIn(textEffects),
+        underline: s.TextEffect.underline.containedIn(textEffects),
       );
 
       // Flutter does not draw an underline below a space which is not between
@@ -530,7 +558,7 @@ class TerminalPainter {
       // the CodePoint 0xA0. This is a non breaking space and a underline can be
       // drawn below it.
       var char = String.fromCharCode(charCode);
-      if (cellFlags & CellFlags.underline != 0 && charCode == 0x20) {
+      if (s.TextEffect.underline.containedIn(textEffects) && charCode == 0x20) {
         char = String.fromCharCode(0xA0);
       }
 
@@ -545,63 +573,43 @@ class TerminalPainter {
     canvas.drawParagraph(paragraph, offset);
   }
 
-  /// Paints the background of a cell represented by [cellData] to [canvas] at
+  /// Paints the background of a cell represented by [contentData] to [canvas] at
   /// [offset].
   @pragma('vm:prefer-inline')
-  void paintCellBackground(Canvas canvas, Offset offset, CellData cellData) {
-    late flutter.Color color;
-    final colorType = cellData.background & CellColor.typeMask;
-
-    if (cellData.flags & CellFlags.inverse != 0) {
-      color = resolveForegroundColor(cellData.foreground);
-    } else if (colorType == CellColor.normal) {
-      return;
-    } else {
-      color = resolveBackgroundColor(cellData.background);
-    }
+  void paintCellBackground(
+    Canvas canvas,
+    Offset offset,
+    int colorData,
+    int contentData,
+  ) {
+    final colorType = s.colorTypeFromData(colorData);
+    if (colorType == s.colorNormalType) return;
+    final color = resolveColor(colorData);
 
     final paint = Paint()..color = color;
-    final doubleWidth = cellData.content >> CellContent.widthShift == 2;
+    final doubleWidth = contentData >> CellContent.widthShift == 2;
     final widthScale = doubleWidth ? 2 : 1;
     final size = Size(_cellSize.width * widthScale + 1, _cellSize.height);
     canvas.drawRect(offset & size, paint);
   }
 
-  /// Get the effective foreground color for a cell from information encoded in
-  /// [cellColor].
+  /// Get the effective color for a cell from information encoded in
+  /// [colorData].
   @pragma('vm:prefer-inline')
-  flutter.Color resolveForegroundColor(int cellColor) {
-    final colorType = cellColor & CellColor.typeMask;
-    final colorValue = cellColor & CellColor.valueMask;
+  flutter.Color resolveColor(int colorData) {
+    final colorType = s.colorTypeFromData(colorData);
 
     switch (colorType) {
-      case CellColor.normal:
+      case s.colorNormalType:
         return _theme.foreground;
-      case CellColor.named:
-      case CellColor.palette:
-        return _colorPalette[colorValue];
-      case CellColor.rgb:
+      case s.colorStandardType:
+        return _colorPalette[s.standardIndexFromData(colorData)];
+      case s.colorBrightType:
+        return _colorPalette[s.brightIndexFromData(colorData) + 1];
+      case s.colorExtendedType:
+        return _colorPalette[s.extendedIndexFromData(colorData)];
       default:
-        return flutter.Color(colorValue | 0xFF000000);
-    }
-  }
-
-  /// Get the effective background color for a cell from information encoded in
-  /// [cellColor].
-  @pragma('vm:prefer-inline')
-  flutter.Color resolveBackgroundColor(int cellColor) {
-    final colorType = cellColor & CellColor.typeMask;
-    final colorValue = cellColor & CellColor.valueMask;
-
-    switch (colorType) {
-      case CellColor.normal:
-        return _theme.background;
-      case CellColor.named:
-      case CellColor.palette:
-        return _colorPalette[colorValue];
-      case CellColor.rgb:
-      default:
-        return flutter.Color(colorValue | 0xFF000000);
+        return flutter.Color(s.rgbFromData(colorData) | 0xFF000000);
     }
   }
 }

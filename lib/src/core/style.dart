@@ -14,7 +14,8 @@ import 'terminal.dart' show Capability;
 /// [Color.rgb] represents full 24-bit RGB colors.
 extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
   /// The default terminal color.
-  const Color.normal() : this._((fgSgr: "39", bgSgr: "49", data: _normalType));
+  const Color.normal()
+    : this._((fgSgr: "39", bgSgr: "49", data: colorNormalType));
 
   /// The standard 8 terminal colors.
   ///
@@ -23,7 +24,7 @@ extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
     : this._((
         fgSgr: "${30 + number}",
         bgSgr: "${40 + number}",
-        data: number | _standardType,
+        data: number | colorStandardType,
       ));
 
   /// The standard 8 bright terminal colors.
@@ -33,7 +34,7 @@ extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
     : this._((
         fgSgr: "${90 + number}",
         bgSgr: "${100 + number}",
-        data: number | _brightType,
+        data: number | colorBrightType,
       ));
 
   /// The standard 16 ANSI colors (8 normal + 8 bright).
@@ -45,7 +46,9 @@ extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
     : this._((
         fgSgr: number < 8 ? "${30 + number}" : "${90 + (number - 8)}",
         bgSgr: number < 8 ? "${40 + number}" : "${100 + (number - 8)}",
-        data: number < 8 ? (number | _normalType) : (number | _brightType),
+        data: number < 8
+            ? (number | colorNormalType)
+            : (number | colorBrightType),
       ));
 
   /// The extended 256-color palette (often known as xterm-256).
@@ -62,7 +65,7 @@ extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
     : this._((
         fgSgr: "38;5;$number",
         bgSgr: "48;5;$number",
-        data: number | _xtermType,
+        data: number | colorExtendedType,
       ));
 
   /// The preferred constructor for extended colors
@@ -115,16 +118,9 @@ extension type const Color._(({String fgSgr, String bgSgr, int data}) _) {
         color,
       );
 
-  int get _data => _.data & ~_typeMask;
-  int get _type => _.data & _typeMask;
+  int get _data => _.data & ~_colorTypeMask;
+  int get _type => _.data & _colorTypeMask;
 }
-
-const _typeMask = 0xF << 60;
-const _normalType = 1 << 63;
-const _standardType = 1 << 62;
-const _brightType = 1 << 61;
-const _xtermType = 1 << 60;
-const _rgbType = 0;
 
 /// A set of text effects that can be applied to text in a terminal.
 ///
@@ -403,20 +399,20 @@ class BorderCharSet {
 }
 
 Color toStandard(Color color) => switch (color._type) {
-  _brightType => _extendedColors[color._data],
-  _xtermType => _extendedColors[_extendedToStandardIndex(color._data)],
-  _rgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
+  colorBrightType => _extendedColors[color._data],
+  colorExtendedType => _extendedColors[_extendedToStandardIndex(color._data)],
+  colorRgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
   _ => color,
 };
 
 Color toAnsi(Color color) => switch (color._type) {
-  _xtermType => _extendedColors[_extendedToAnsiIndex(color._data)],
-  _rgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
+  colorExtendedType => _extendedColors[_extendedToAnsiIndex(color._data)],
+  colorRgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
   _ => color,
 };
 
 Color toExtended(Color color) => switch (color._type) {
-  _rgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
+  colorRgbType => _extendedColors[_rgbToExtendedIndex(color._data)],
   _ => color,
 };
 
@@ -427,6 +423,21 @@ int getRgbVal(Color color) {
     return _extendedRgbValues[color._data];
   }
 }
+
+int colorData(Color color) => color._.data;
+
+int colorTypeFromData(int colorData) => colorData & _colorTypeMask;
+int standardIndexFromData(int colorData) => colorData & ~_colorTypeMask;
+int brightIndexFromData(int colorData) => colorData & ~_colorTypeMask;
+int extendedIndexFromData(int colorData) => colorData & ~_colorTypeMask;
+int rgbFromData(int colorData) => colorData & ~_colorTypeMask;
+
+const _colorTypeMask = 0xF << 24;
+const colorNormalType = 1 << 24;
+const colorStandardType = 1 << 25;
+const colorBrightType = 1 << 26;
+const colorExtendedType = 1 << 27;
+const colorRgbType = 0;
 
 String fgSgr(Color color) => color._.fgSgr;
 String bgSgr(Color color) => color._.bgSgr;
@@ -571,18 +582,21 @@ int _rgbToExtendedIndex(int rgb) {
   return distGray < distCube ? grayXterm : cubeIndex;
 }
 
+int textEffectsData(TextEffects effects) => effects._data;
+TextEffects textEffectsFromData(int data) => TextEffects._(data);
+
 extension ToDebugStringColor on Color {
   String toDebugString() {
     switch (_type) {
-      case _normalType:
+      case colorNormalType:
         return "normal";
-      case _standardType:
+      case colorStandardType:
         return "standard(${_data})";
-      case _brightType:
+      case colorBrightType:
         return "bright(${_data & 0x7F_FF_FF_FF_FF_FF_FF})";
-      case _xtermType:
+      case colorExtendedType:
         return "extended(${_data & 0x7F_FF_FF_FF_FF_FF_FF})";
-      case _rgbType:
+      case colorRgbType:
         final r = _data ~/ 256 ~/ 256;
         final g = (_data % (256 * 256)) ~/ 256;
         final b = _data % 256;

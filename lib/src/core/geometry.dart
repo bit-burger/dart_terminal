@@ -44,7 +44,7 @@ extension type const Position._(({int x, int y}) _) {
   const Position(int x, int y) : this._((x: x, y: y));
 
   /// The origin position (0,0), representing the top-left corner.
-  static const Position zero = Position(0, 0);
+  static const Position topLeft = Position(0, 0);
 
   /// Creates a [Rect] from this position and the given [size].
   ///

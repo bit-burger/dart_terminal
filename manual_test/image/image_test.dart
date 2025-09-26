@@ -49,7 +49,7 @@ void paint() {
       size: viewport.size,
       filePath: "mona_lisa.jpeg",
     );
-    viewport.drawImage(position: Position.zero, image: image);
+    viewport.drawImage(position: Position.topLeft, image: image);
   } else {
     viewport.drawColor(optimizeByClear: false);
     viewport.drawImage(position: Position(offset, 0), image: marioImage);

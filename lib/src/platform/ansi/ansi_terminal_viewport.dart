@@ -152,7 +152,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
       ? null
       : CursorState(position: _cursorPosition!, blinking: _cursorBlinking);
   bool _cursorBlinking = true;
-  Position? _cursorPosition = Position.zero;
+  Position? _cursorPosition = Position.topLeft;
 
   @override
   set cursor(CursorState? cursor) {
@@ -180,7 +180,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
 
   void _constrainCursorPositionBySize() {
     if (_cursorPosition != null) {
-      _cursorPosition = _cursorPosition!.clamp(Position.zero & size);
+      _cursorPosition = _cursorPosition!.clamp(Position.topLeft & size);
     }
   }
 
@@ -195,7 +195,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
       drawRect(
         background: color,
         foreground: Foreground(),
-        rect: Position.zero & size,
+        rect: Position.topLeft & size,
       );
     }
   }
@@ -274,7 +274,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
     required Position position,
     required NativeTerminalImage image,
   }) {
-    final clip = (Position.zero & size).clip(position & image.size);
+    final clip = (Position.topLeft & size).clip(position & image.size);
     for (int y = clip.y1; y <= clip.y2; y++) {
       _changeList[y] = true;
       for (int x = clip.x1; x <= clip.x2; x++) {
@@ -290,7 +290,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
     Color? background,
     Foreground? foreground,
   }) {
-    if (!(Position.zero & size).contains(position)) return;
+    if (!(Position.topLeft & size).contains(position)) return;
     _changeList[position.y] = true;
     _screenBuffer[position.y][position.x].draw(foreground, background);
   }
@@ -301,7 +301,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
     Color? background,
     Foreground? foreground,
   }) {
-    rect = rect.clip(Position.zero & size);
+    rect = rect.clip(Position.topLeft & size);
     for (int y = rect.y1; y <= rect.y2; y++) {
       _changeList[y] = true;
       for (int x = rect.x1; x <= rect.x2; x++) {
@@ -325,7 +325,7 @@ class _AnsiTerminalViewport extends TerminalViewport {
         codePoint: codepoint,
       );
 
-      if (!(Position.zero & size).contains(charPosition)) continue;
+      if (!(Position.topLeft & size).contains(charPosition)) continue;
       if (codepoint < 32 || codepoint == 127) continue;
 
       _screenBuffer[charPosition.y][charPosition.x].draw(foreground, null);

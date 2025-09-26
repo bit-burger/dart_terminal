@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 
 // Project imports:
 import 'package:dart_terminal/core.dart' hide Size, Offset;
-import 'flutter_terminal_service.dart';
+import 'terminal_view.dart';
 
 /// Handles scrolling gestures in the alternate screen buffer. In alternate
 /// screen buffer, the terminal don't have a scrollback buffer, instead, the
