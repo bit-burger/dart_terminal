@@ -1,6 +1,7 @@
 // Project imports:
 import 'geometry.dart';
 import 'style.dart';
+import 'package:characters/characters.dart';
 
 /// A terminal image representation that can be drawn on the terminal canvas.
 ///
@@ -47,13 +48,38 @@ abstract class TerminalCanvas {
 
   /// Draws text on the canvas at the specified position.
   ///
-  /// The [text] will be rendered starting at [position], applying the optional
+  /// The [text] will be rendered starting at [position],
   /// [style] for text formatting.
-  // TODO: change to TextStyle
+  ///
+  /// If no [style] is given the text will be rendered in the default colors
+  /// and there will be no background
+  ///
+  /// If [style] contains a background the background will be rendered
+  /// else the background remains unchanged.
+  ///
+  /// [text] handles most characters correctly except:
+  /// for instance emojis, non printable characters,
+  /// or east asian scripts are not supported.
+  /// See [drawUnicodeText].
+  ///
+  /// A more technical description what is exactly allowed:
+  /// [text] is allowed to only consist of BMP codepoints
+  /// and cannot contain any graphemes consisting of more than one codepoint.
+  /// It should also not contain C0/C1 control characters and DEL/U+007F.
   void drawText({
     required String text,
     required Position position,
-    ForegroundStyle? style,
+    TextStyle style,
+  });
+
+  /// Like [drawText] but handles all unicode symbols and graphemes
+  /// (which also include emojis and all kinds of scripts).
+  /// Only exceptions are non printable characters like
+  /// C0,C1 control characters and DEL/U+007F.
+  void drawUnicodeText({
+    required String text,
+    required Position position,
+    TextStyle style,
   });
 
   /// Draws a filled rectangle on the canvas.
