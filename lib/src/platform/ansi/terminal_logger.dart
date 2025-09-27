@@ -1,9 +1,11 @@
-part of 'ansi_terminal_service.dart';
+// Project imports:
+import 'package:dart_terminal/core.dart';
+import '../shared/size_tracker.dart';
 
-class _AnsiTerminalLogger extends TerminalLogger {
-  final AnsiTerminalService _service;
+class AnsiTerminalLogger extends TerminalLogger {
+  final TerminalSizeTracker _sizeTracker;
 
-  _AnsiTerminalLogger._(this._service);
+  AnsiTerminalLogger(this._sizeTracker);
 
   @override
   void deleteLastLine(int count) {
@@ -20,5 +22,5 @@ class _AnsiTerminalLogger extends TerminalLogger {
   }
 
   @override
-  int get width => _service._sizeTracker.currentSize.width;
+  int get width => _sizeTracker.currentSize.width;
 }

@@ -1,20 +1,16 @@
 // Dart imports:
 import 'dart:async' as async;
-import 'dart:io' as io;
 
 // Project imports:
 import 'package:dart_terminal/core.dart';
-import '../../core/style.dart';
 import '../shared/native_terminal_image.dart';
 import '../shared/signals.dart';
+import '../shared/size_tracker.dart';
 import '../shared/terminal_capabilities.dart';
-import '../shared/terminal_size_tracker.dart';
-import 'ansi_escape_codes.dart' as ansi_codes;
-import 'ansi_terminal_controller.dart';
-import 'ansi_terminal_input_processor.dart';
-
-part 'ansi_terminal_logger.dart';
-part 'ansi_terminal_viewport.dart';
+import 'terminal_controller.dart';
+import 'terminal_input_processor.dart';
+import 'terminal_logger.dart';
+import 'terminal_viewport.dart';
 
 class AnsiTerminalService extends TerminalService {
   final TerminalCapabilitiesDetector _capabilitiesDetector;
@@ -24,9 +20,9 @@ class AnsiTerminalService extends TerminalService {
   final AnsiTerminalController _controller = AnsiTerminalController();
 
   final List<async.StreamSubscription<Object>> _subscriptions = [];
-  late final _AnsiTerminalViewport _viewport;
+  late final AnsiTerminalViewport _viewport;
   TerminalViewport get viewport => _viewport;
-  late final _AnsiTerminalLogger _logger;
+  late final AnsiTerminalLogger _logger;
   TerminalLogger get logger => _logger;
 
   /// Creates a new factory with specific capability detection and size tracking.
@@ -35,8 +31,8 @@ class AnsiTerminalService extends TerminalService {
     required TerminalSizeTracker sizeTracker,
   }) : _capabilitiesDetector = capabilitiesDetector,
        _sizeTracker = sizeTracker {
-    _viewport = _AnsiTerminalViewport._(this);
-    _logger = _AnsiTerminalLogger._(this);
+    _viewport = AnsiTerminalViewport(_controller, _sizeTracker);
+    _logger = AnsiTerminalLogger(_sizeTracker);
   }
 
   /// Creates a factory with automatic configuration
@@ -124,7 +120,7 @@ class AnsiTerminalService extends TerminalService {
       ..changeLineWrappingMode(enable: false)
       ..changeScreenMode(alternateBuffer: true)
       ..changeMouseTrackingMode(enable: true);
-    _viewport._onActivationEvent();
+    _viewport.activate();
   }
 
   void _onInputEvent(Object event) {
@@ -142,7 +138,7 @@ class AnsiTerminalService extends TerminalService {
   }
 
   void _onResizeEvent() {
-    if (_viewport.isActive) _viewport._onResizeEvent();
+    if (_viewport.isActive) _viewport.resize();
     listener?.screenResize(_sizeTracker.currentSize);
   }
 

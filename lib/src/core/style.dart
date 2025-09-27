@@ -296,6 +296,8 @@ extension type const TextStyle._(
          effects: effects,
        ));
 
+  ForegroundStyle get fgStyle =>
+      ForegroundStyle(color: color, effects: textEffects);
   Color get color => _.color;
   Color? get backgroundColor => _.backgroundColor;
   TextEffects get textEffects => _.effects;

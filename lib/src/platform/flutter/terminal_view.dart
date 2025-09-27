@@ -9,8 +9,8 @@ import 'package:flutter/rendering.dart';
 // Project imports:
 import 'package:dart_terminal/core.dart' as term;
 import 'package:dart_terminal/core.dart' hide Offset, Color, Colors, Rect, Size;
-import 'buffer.dart';
 import '../../core/style.dart' as s;
+import 'buffer.dart';
 import 'flutter_terminal_viewport.dart';
 import 'gesture_handling.dart';
 import 'keyboard_handling.dart';

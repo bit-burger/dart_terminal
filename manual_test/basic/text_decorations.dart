@@ -48,12 +48,20 @@ TextEffects s(int encodedStyle) => TextEffects(
 void paint() {
   viewport.drawText(
     text: "Press ctrl-A",
-    style: ForegroundStyle(effects: s(style), color: Colors.red),
+    style: TextStyle(
+      effects: s(style),
+      color: Colors.red,
+      backgroundColor: Colors.blue,
+    ),
     position: Position(0, 0),
   );
   viewport.drawText(
     text: " or ctrl-S",
-    style: ForegroundStyle(effects: s(~style), color: Colors.red),
+    style: TextStyle(
+      effects: s(~style),
+      color: Colors.red,
+      backgroundColor: Colors.blue,
+    ),
     position: Position(12, 0),
   );
   viewport.updateScreen();

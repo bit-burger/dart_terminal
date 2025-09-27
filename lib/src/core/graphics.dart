@@ -1,7 +1,8 @@
+// Package imports:
+
 // Project imports:
 import 'geometry.dart';
 import 'style.dart';
-import 'package:characters/characters.dart';
 
 /// A terminal image representation that can be drawn on the terminal canvas.
 ///

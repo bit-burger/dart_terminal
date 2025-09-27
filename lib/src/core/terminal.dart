@@ -118,7 +118,6 @@ abstract class TerminalViewport implements TerminalCanvas {
     required Position position,
   });
 
-
   /// Updates the terminal screen with any pending changes.
   void updateScreen();
 }

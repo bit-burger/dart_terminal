@@ -1,9 +1,9 @@
-import 'dart:math';
+// Dart imports:
 import 'dart:typed_data';
 
+// Project imports:
 import 'package:dart_terminal/core.dart';
 import '../../core/style.dart';
-
 import 'unicode_v11.dart';
 
 class _HashEnd {
