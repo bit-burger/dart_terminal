@@ -51,6 +51,11 @@ class _TerminalCell {
     bg = background;
     newFg = newBg = null;
     changed = false;
+    // borderState does not need to be reset as the
+    // BorderIdentifier should not be reused between resets
+    // and there fore because they are unique
+    // one will never find the same BorderIdentifier (of the borderState)
+    // across resets
   }
 
   void drawBorder(
