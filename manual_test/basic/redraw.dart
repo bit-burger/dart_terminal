@@ -28,7 +28,7 @@ class ControlTerminalInputListener extends DefaultTerminalListener {
                   effects: TextEffects.underline,
                   color: i != 0 || j != 0 ? Colors.green : Colors.yellow,
                 ),
-                codePoint: (codePoint % 26) + 65,
+                codeUnit: (codePoint % 26) + 65,
               ),
             );
           }

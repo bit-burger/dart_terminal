@@ -123,7 +123,7 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
             _redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
           }
           _transition(cell.fg.style, cell.bg);
-          _redrawBuff.writeCharCode(cell.fg.codePoint);
+          _redrawBuff.writeCharCode(cell.fg.codeUnit);
           lastWritten = true;
           cell.changed = false;
           cursorMoved = true;

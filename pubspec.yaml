@@ -13,9 +13,11 @@ dependencies:
   image: ^4.5.4
   quiver: ^3.0.0
   meta: ^1.16.0
+  wcwidth: ^0.0.4
+  characters: ^1.4.0
 
 dev_dependencies:
   very_good_analysis: ^5.0.0
   import_sorter: ^4.6.0
   test: ^1.21.0
-  flutter_test: any
+  #flutter_test: any

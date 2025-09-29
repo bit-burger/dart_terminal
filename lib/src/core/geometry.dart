@@ -131,4 +131,8 @@ extension type const Rect._(({int x1, int x2, int y1, int y2}) _) {
       _.x2 >= position.x &&
       _.y1 <= position.y &&
       _.y2 >= position.y;
+
+  ///
+  bool containsRect(Rect rect) =>
+      contains(rect.topLeft) && contains(rect.bottomRight);
 }

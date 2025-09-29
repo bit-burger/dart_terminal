@@ -1,11 +1,46 @@
 // Project imports:
 import 'package:dart_terminal/ansi.dart';
+import 'package:characters/characters.dart';
+import 'package:wcwidth/wcwidth.dart';
 
 const int _leftBorderMask = 1 << 63;
 const int _topBorderMask = 1 << 62;
 const int _rightBorderMask = 1 << 61;
 const int _bottomBorderMask = 1 << 60;
 const int _borderDrawIdMask = ~(0xF << 60);
+
+/// an extension for [TerminalCell]s
+sealed class ForegroundCellExtension {}
+
+final class RenderCellExtension extends ForegroundCellExtension {
+  /// The size of the object that is rendered,
+  /// this size should be covered with [CoveredTerminalCellExtension]
+  /// except the top most left which is covered with
+  /// the [RenderCellExtension] itself
+  final Size size;
+
+  RenderCellExtension(this.size);
+}
+
+/// to render everything that isn't in the unicode BMP with width 1 (e.g emojis)
+final class CharacterCellExtension extends RenderCellExtension {
+  final String grapheme;
+
+  CharacterCellExtension(int width, this.grapheme) : super(Size(width, 1));
+}
+
+/// reserves a cell to be rendered by a [RenderCellExtension]
+/// to keep track that this cell has not been overwritten,
+/// it should be made sure that the [TerminalCell.newFg] is `null`
+/// and that if the [CoveredTerminalCellExtension] itself is overwritten,
+/// that the complete [RenderCellExtension]
+/// with all its [CoveredTerminalCellExtension] is deleted
+final class CoveredTerminalCellExtension extends ForegroundCellExtension {
+  /// The position of the renderCellExtension this belongs to.
+  final Position renderCellExtensionPosition;
+
+  CoveredTerminalCellExtension(this.renderCellExtensionPosition);
+}
 
 class TerminalCell {
   bool changed = false;
@@ -14,6 +49,7 @@ class TerminalCell {
   Foreground? newFg;
   Color? newBg;
   int borderState = 0;
+  ForegroundCellExtension? extension;
 
   static List<TerminalCell> rowGen(int length) =>
       List.generate(length, (_) => TerminalCell());
@@ -27,6 +63,12 @@ class TerminalCell {
     if (bg != null) {
       newBg = bg;
     }
+    changed = true;
+  }
+
+  void drawExtension(Color bg, ForegroundCellExtension extension) {
+    newBg = bg;
+    this.extension = extension;
     changed = true;
   }
 
@@ -54,6 +96,7 @@ class TerminalCell {
     fg = foreground;
     bg = background;
     newFg = newBg = null;
+    extension = null;
     changed = false;
     // borderState does not need to be reset as the
     // BorderIdentifier should not be reused between resets
@@ -86,7 +129,7 @@ class TerminalCell {
     changed = true;
     newFg = Foreground(
       style: ForegroundStyle(color: foregroundColor),
-      codePoint: charSet.getCorrectGlyph(left, top, right, bottom),
+      codeUnit: charSet.getCorrectGlyph(left, top, right, bottom),
     );
   }
 }
@@ -267,15 +310,38 @@ abstract class BufferTerminalViewport extends TerminalViewport {
     for (int i = 0; i < text.length; i++) {
       int codepoint = text.codeUnitAt(i);
       final charPosition = Position(position.x + i, position.y);
-      final foreground = Foreground(style: style.fgStyle, codePoint: codepoint);
 
       if (!(Position.topLeft & size).contains(charPosition)) continue;
       if (codepoint < 32 || codepoint == 127) continue;
 
+      final foreground = Foreground(style: style.fgStyle, codeUnit: codepoint);
       _data[charPosition.y][charPosition.x].draw(
         foreground,
         style.backgroundColor,
       );
+    }
+  }
+
+  void _drawRenderExtension(
+    RenderCellExtension renderExtension,
+    Position position,
+    Color background,
+  ) {
+    if (!(Position.topLeft & size).containsRect(
+      position & renderExtension.size,
+    )) {
+      return;
+    }
+    for (int j = 0; j < renderExtension.size.height; j++) {
+      for (int i = 0; i < renderExtension.size.width; i++) {
+        late final ForegroundCellExtension extension;
+        if (j == 0 && i == 0) {
+          extension = renderExtension;
+        } else {
+          extension = CoveredTerminalCellExtension(position);
+        }
+        _data[j][i].drawExtension(background, extension);
+      }
     }
   }
 
@@ -284,5 +350,29 @@ abstract class BufferTerminalViewport extends TerminalViewport {
     required String text,
     required Position position,
     TextStyle style = const TextStyle(),
-  }) {}
+  }) {
+    _changeList[position.y] = true;
+    int x = position.x;
+    for (final character in text.characters) {
+      final charPos = Position(x, position.y);
+      if (!(Position.topLeft & size).contains(charPos)) continue;
+      final width = character.wcwidth();
+      if (width == 1 && character.length == 1) {
+        // is in BMP (only one code unit) and width is 1
+        final foreground = Foreground(
+          style: style.fgStyle,
+          codeUnit: character.codeUnitAt(0),
+        );
+        _data[charPos.y][charPos.x].draw(foreground, style.backgroundColor);
+      } else {
+        // if width == 2 will check if sticks out right
+        _drawRenderExtension(
+          CharacterCellExtension(width, character),
+          Position(x, position.y),
+          style.backgroundColor ?? const Color.normal(),
+        );
+      }
+      x += width;
+    }
+  }
 }

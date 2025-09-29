@@ -325,14 +325,16 @@ extension type const ForegroundStyle._(({Color color, TextEffects effects}) _) {
 /// Not all colors and effects are supported by all terminals. Some terminals may
 /// interpret these colors and effects differently or not support them at all.
 /// There are matching [Capability]s for each color format and effect.
-extension type const Foreground._(({ForegroundStyle style, int codePoint}) _) {
+extension type const Foreground._(({ForegroundStyle style, int codeUnit}) _) {
   const Foreground({
     ForegroundStyle style = const ForegroundStyle(),
-    int codePoint = 32,
-  }) : this._((style: style, codePoint: codePoint));
+    int codeUnit = 32,
+  }) : this._((style: style, codeUnit: codeUnit));
 
   ForegroundStyle get style => _.style;
-  int get codePoint => _.codePoint;
+
+  /// single UFT-16 codeUnit which can therefore not represent all codepoints.
+  int get codeUnit => _.codeUnit;
   Color get color => _.style._.color;
   TextEffects get effects => _.style._.effects;
 }
