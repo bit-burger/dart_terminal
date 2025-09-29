@@ -6,6 +6,7 @@ import 'package:dart_console/src/ffi/termlib.dart' as console;
 
 // Project imports:
 import 'escape_codes.dart' as ansi_codes;
+import 'package:dart_terminal/core.dart';
 
 /// Controls terminal behavior using ANSI escape sequences.
 ///
@@ -21,8 +22,17 @@ class AnsiTerminalController {
   /// Moves the cursor to the specified position.
   ///
   /// Coordinates are 1-based, where (1,1) is the top-left corner.
-  void setCursorPosition(int x, int y) {
-    io.stdout.write(ansi_codes.cursorTo(x, y));
+  void setCursorPosition(Position position) {
+    io.stdout.write(ansi_codes.cursorTo(position.x + 1, position.y + 1));
+  }
+
+  /// Moves the cursor to the specified position relative to [currX] and [currY]
+  /// Giving the currentPosition can be used to optimize the sequence
+  void setCursorPositionRelative(
+    Position currentPosition,
+    Position newPosition,
+  ) {
+    setCursorPosition(newPosition); // TODO: optimize
   }
 
   /// Controls cursor blinking state.

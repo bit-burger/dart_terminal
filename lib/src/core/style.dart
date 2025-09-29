@@ -640,8 +640,8 @@ extension ToDebugStringForegroundStyle on ForegroundStyle {
 extension ToDebugStringForeground on Foreground {
   String toDebugString() {
     List<String> parts = [];
-    if (codePoint != 32) {
-      parts.add("codePoint: $codePoint");
+    if (codeUnit != 32) {
+      parts.add("codePoint: $codeUnit");
     }
     final styleDetail = style.toDebugString();
     if (styleDetail.isNotEmpty) {

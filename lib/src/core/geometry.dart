@@ -33,7 +33,13 @@ extension type const Offset._(({int dx, int dy}) _) {
 
   /// The vertical component of this offset.
   int get dy => _.dy;
+
+  Offset operator *(int factor) =>
+      Offset._((dx: _.dx * factor, dy: _.dy * factor));
 }
+
+const e1 = Offset(1, 0);
+const e2 = Offset(0, 1);
 
 /// Represents an absolute position in the terminal with integer coordinates.
 ///
@@ -132,7 +138,7 @@ extension type const Rect._(({int x1, int x2, int y1, int y2}) _) {
       _.y1 <= position.y &&
       _.y2 >= position.y;
 
-  ///
+  /// Checks if the given [rect] lies within this rectangle.
   bool containsRect(Rect rect) =>
       contains(rect.topLeft) && contains(rect.bottomRight);
 }

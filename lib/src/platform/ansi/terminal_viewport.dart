@@ -3,6 +3,7 @@ import 'dart:io' as io;
 
 // Project imports:
 import 'package:dart_terminal/core.dart';
+import 'package:flutter/animation.dart';
 import '../../core/style.dart';
 import '../shared/buffer_terminal_viewport.dart';
 import '../shared/size_tracker.dart';
@@ -24,7 +25,11 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
   void activate() {
     if (_initialActivation) {
       _initialActivation = false;
-      _controller.setCursorPosition(1, 1);
+      _cursorPosition = Position.topLeft;
+      _controller.setCursorPosition(_cursorPosition);
+      // should also be set explicitly by controller?
+      _cursorHidden = false;
+      _cursorBlinking = true;
     }
     io.stdout.write(ansi_codes.resetAllFormats);
     currentFg = const ForegroundStyle();
@@ -48,11 +53,12 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
   }
 
   @override
-  CursorState? get cursor => _cursorPosition == null
+  CursorState? get cursor => _cursorHidden
       ? null
       : CursorState(position: _cursorPosition!, blinking: _cursorBlinking);
-  bool _cursorBlinking = true;
-  Position? _cursorPosition = Position.topLeft;
+  late bool _cursorBlinking;
+  late bool _cursorHidden;
+  late Position _cursorPosition;
 
   @override
   set cursor(CursorState? cursor) {
@@ -62,19 +68,17 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
         _cursorBlinking = cursor.blinking;
       }
       if (cursor.position != _cursorPosition) {
-        if (_cursorPosition == null) {
-          _controller.changeCursorVisibility(hiding: false);
-        }
-        _controller.setCursorPosition(
-          cursor.position.x + 1,
-          cursor.position.y + 1,
-        );
+        _controller.setCursorPositionRelative(_cursorPosition, cursor.position);
         _cursorPosition = cursor.position;
       }
+      if (_cursorHidden) {
+        _controller.changeCursorVisibility(hiding: false);
+        _cursorHidden = false;
+      }
       _constrainCursorPosition();
-    } else if (_cursorPosition != null) {
+    } else if (!_cursorHidden) {
       _controller.changeCursorVisibility(hiding: true);
-      _cursorPosition = null;
+      _cursorHidden = true;
     }
   }
 
@@ -111,34 +115,59 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
       _redrawBuff.write(ansi_codes.eraseEntireScreen);
       _backgroundFill = null;
     }
-    bool cursorMoved = false;
-    for (int j = 0; j < size.height; j++) {
-      if (!checkRowChanged(j)) continue;
-      bool lastWritten = false;
-      final row = getRow(j);
-      for (int i = 0; i < size.width; i++) {
-        final cell = row[i];
-        if (cell.changed && cell.calculateDifference()) {
-          if (!lastWritten) {
-            _redrawBuff.write(ansi_codes.cursorTo(j + 1, i + 1));
+    Position oldCursorPosition = _cursorPosition;
+    for (int y = 0; y < size.height; y++) {
+      if (!checkRowChanged(y)) continue;
+      final row = getRow(y);
+      for (int x = 0; x < size.width; x++) {
+        final cell = row[x];
+        final cellPos = Position(x, y);
+        if (cell.changed) {
+          if (cell.extension != null && _tryRenderExtension(cell, cellPos)) {
+            continue;
           }
-          _transition(cell.fg.style, cell.bg);
-          _redrawBuff.writeCharCode(cell.fg.codeUnit);
-          lastWritten = true;
-          cell.changed = false;
-          cursorMoved = true;
-        } else {
-          lastWritten = false;
+          if (cell.calculateDifference()) {
+            if (cellPos != _cursorPosition) {
+              _redrawBuff.write(ansi_codes.cursorTo(y + 1, x + 1));
+            }
+            _transition(cell.fg.style, cell.bg);
+            _redrawBuff.writeCharCode(cell.fg.codeUnit);
+            cell.changed = false;
+          }
         }
       }
     }
     io.stdout.write(_redrawBuff.toString());
     _redrawBuff.clear();
-    if (cursorMoved && _cursorPosition != null) {
-      _controller.setCursorPosition(
-        _cursorPosition!.x + 1,
-        _cursorPosition!.y + 1,
-      );
+    // cursor position should remain unchanged if cursor visible
+    if (oldCursorPosition != _cursorPosition && !_cursorHidden) {
+      _controller.setCursorPositionRelative(_cursorPosition, oldCursorPosition);
+      _cursorPosition = oldCursorPosition;
+    }
+  }
+
+  /// try to render an extension and if it succeeds return true
+  bool _tryRenderExtension(TerminalCell renderCell, Position cellPos) {
+    final extension = renderCell.extension! as RenderCellExtension;
+    for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
+      final row = getRow(y);
+      for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
+        if (row[x].fg != null) {
+          // extension is invalid as something has been drawn on top of it
+          return false;
+        }
+      }
+    }
+    for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
+      final row = getRow(y);
+      for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
+        if (row[x].fg != null) {
+          // extension is invalid as something has been drawn on top of it
+        }
+      }
+    }
+    if (extension is CharacterCellExtension) {
+      _redrawBuff.write(extension.grapheme);
     }
   }
 
