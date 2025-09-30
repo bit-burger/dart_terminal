@@ -5,10 +5,10 @@ import 'dart:io' as io;
 import 'package:dart_terminal/core.dart';
 import 'package:flutter/animation.dart';
 import '../../core/style.dart';
-import '../shared/buffer_terminal_viewport.dart';
+import '../shared/buffer_viewport.dart';
 import '../shared/size_tracker.dart';
 import 'escape_codes.dart' as ansi_codes;
-import 'terminal_controller.dart';
+import 'controller.dart';
 
 class AnsiTerminalViewport extends BufferTerminalViewport {
   AnsiTerminalController _controller;

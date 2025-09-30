@@ -7,10 +7,10 @@ import '../shared/native_terminal_image.dart';
 import '../shared/signals.dart';
 import '../shared/size_tracker.dart';
 import '../shared/terminal_capabilities.dart';
-import 'terminal_controller.dart';
-import 'terminal_input_processor.dart';
-import 'terminal_logger.dart';
-import 'terminal_viewport.dart';
+import 'controller.dart';
+import 'input_processor.dart';
+import 'logger.dart';
+import 'viewport.dart';
 
 class AnsiTerminalService extends TerminalService {
   final TerminalCapabilitiesDetector _capabilitiesDetector;

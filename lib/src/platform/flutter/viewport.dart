@@ -1,6 +1,6 @@
 // Project imports:
 import 'package:dart_terminal/core.dart';
-import 'package:dart_terminal/src/platform/shared/buffer_terminal_viewport.dart';
+import 'package:dart_terminal/src/platform/shared/buffer_viewport.dart';
 
 class FlutterTerminalViewport extends BufferTerminalViewport {
   bool hasSize = false;

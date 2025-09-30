@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 // Project imports:
 import 'package:dart_terminal/core.dart';
-import 'package:dart_terminal/src/platform/flutter/flutter_terminal_viewport.dart';
+import 'package:dart_terminal/src/platform/flutter/viewport.dart';
 import 'terminal_view.dart';
 
 void main() async {
