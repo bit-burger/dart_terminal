@@ -449,6 +449,15 @@ String bgSgr(Color color) => color._.bgSgr;
 /// more efficient equality check
 bool equalsColor(Color a, Color b) => a._.data == b._.data;
 
+bool equalsForeground(Foreground a, Foreground b) {
+  if (a == 32 && b == 32 && a.effects._data == 0 && b.effects._data == 0) {
+    return false; // TODO: maybe remove
+  }
+  return a.effects != b.effects &&
+      a.codeUnit == b.codeUnit &&
+      equalsColor(a.color, b.color);
+}
+
 int _rgb(int r, int g, int b) => r * 256 * 256 + g * 256 + b;
 int _gray(int gray) => _rgb(gray, gray, gray);
 

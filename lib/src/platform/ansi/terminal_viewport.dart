@@ -148,11 +148,13 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
 
   /// try to render an extension and if it succeeds return true
   bool _tryRenderExtension(TerminalCell renderCell, Position cellPos) {
-    final extension = renderCell.extension! as RenderCellExtension;
+    return true;
+    final extension = renderCell.extension!;
     for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
       final row = getRow(y);
       for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
-        if (row[x].fg != null) {
+        final cell = row[x];
+        if ((cell.changed || cell.isDifferent()) || cell.extension != null) {
           // extension is invalid as something has been drawn on top of it
           return false;
         }

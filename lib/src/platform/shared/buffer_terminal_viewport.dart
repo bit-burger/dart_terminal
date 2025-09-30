@@ -3,43 +3,64 @@ import 'package:dart_terminal/ansi.dart';
 import 'package:characters/characters.dart';
 import 'package:wcwidth/wcwidth.dart';
 
+import '../../core/style.dart';
+
 const int _leftBorderMask = 1 << 63;
 const int _topBorderMask = 1 << 62;
 const int _rightBorderMask = 1 << 61;
 const int _bottomBorderMask = 1 << 60;
 const int _borderDrawIdMask = ~(0xF << 60);
 
-/// an extension for [TerminalCell]s
-sealed class ForegroundCellExtension {}
+/// marks the foreground that an extension has painted this
+const extensionForeground = Foreground(codeUnit: 0);
 
-final class RenderCellExtension extends ForegroundCellExtension {
-  /// The size of the object that is rendered,
-  /// this size should be covered with [CoveredTerminalCellExtension]
-  /// except the top most left which is covered with
-  /// the [RenderCellExtension] itself
+/// an extension for [TerminalCell]s,
+/// is on the same layer as the foreground
+/// and therefore replaces it.
+///
+/// The size of the object that is rendered is [size].
+/// Only write an extension into the buffer if the [size] fits.
+/// In this area there should only be the the [ForegroundCellExtension]
+/// on the top left and all other cells foreground should not be changed
+/// after setting the extension.
+///
+/// Therefore setting an extension means:
+/// - setting the [TerminalCell.fg] to [extensionForeground]
+/// - setting [TerminalCell.changed] to `false`
+/// - setting [TerminalCell.extension] to `null`
+///   and if it was not 0 before invalidating the complete extension
+///
+/// Before updating a screen it should be checked
+/// if all extensions are still valid (otherwise invalidate it):
+/// - check if [TerminalCell.extension] is `null` everywhere
+///   (except the top left which is the extension itself)
+/// - check if [TerminalCell.fg] is [extensionForeground]
+/// - check if another extension is found in the area of the extension,
+///   and invalidate the newer extension (check via [extensionTimestamp])
+///   except if both extensions are of the same type and [supportStacking]
+///   is true
+///
+/// To invalidate an extension:
+/// - set all the foregrounds to the default foreground
+/// - set changed to true on the extensions and all of its lines
+/// - set the [TerminalCell.extension] to `null` from the extension cell
+sealed class ForegroundCellExtension {
   final Size size;
+  final int extensionTimestamp;
+  static int _extensionCount = 0;
+  final bool supportStacking;
 
-  RenderCellExtension(this.size);
+  ForegroundCellExtension(this.size, {this.supportStacking = false})
+    : extensionTimestamp = _extensionCount++;
 }
 
-/// to render everything that isn't in the unicode BMP with width 1 (e.g emojis)
-final class CharacterCellExtension extends RenderCellExtension {
+/// to render a character that either isn't in the unicode BMP
+/// or has a with width greater than 1 (e.g emojis)
+/// and therefore requires special handling
+final class CharacterCellExtension extends ForegroundCellExtension {
   final String grapheme;
 
   CharacterCellExtension(int width, this.grapheme) : super(Size(width, 1));
-}
-
-/// reserves a cell to be rendered by a [RenderCellExtension]
-/// to keep track that this cell has not been overwritten,
-/// it should be made sure that the [TerminalCell.newFg] is `null`
-/// and that if the [CoveredTerminalCellExtension] itself is overwritten,
-/// that the complete [RenderCellExtension]
-/// with all its [CoveredTerminalCellExtension] is deleted
-final class CoveredTerminalCellExtension extends ForegroundCellExtension {
-  /// The position of the renderCellExtension this belongs to.
-  final Position renderCellExtensionPosition;
-
-  CoveredTerminalCellExtension(this.renderCellExtensionPosition);
 }
 
 class TerminalCell {
@@ -66,24 +87,18 @@ class TerminalCell {
     changed = true;
   }
 
-  void drawExtension(Color bg, ForegroundCellExtension extension) {
-    newBg = bg;
-    this.extension = extension;
-    changed = true;
-  }
-
   bool calculateDifference() {
     assert(changed);
     bool diff = false;
     if (newFg != null) {
-      if (newFg != fg) {
+      if (!equalsForeground(newFg!, fg)) {
         diff = true;
         fg = newFg!;
       }
       newFg = null;
     }
     if (newBg != null) {
-      if (newBg != bg) {
+      if (!equalsColor(newBg!, bg)) {
         diff = true;
         bg = newBg!;
       }
@@ -91,6 +106,10 @@ class TerminalCell {
     }
     return diff;
   }
+
+  bool isDifferent() =>
+      (newBg != null && equalsColor(newBg!, bg)) ||
+      (newFg != null && equalsForeground(newFg!, fg));
 
   void reset(Foreground foreground, Color background) {
     fg = foreground;
@@ -322,25 +341,43 @@ abstract class BufferTerminalViewport extends TerminalViewport {
     }
   }
 
-  void _drawRenderExtension(
-    RenderCellExtension renderExtension,
+  /// draws the [extension]
+  void _drawExtension(
+    ForegroundCellExtension extension,
     Position position,
     Color background,
   ) {
-    if (!(Position.topLeft & size).containsRect(
-      position & renderExtension.size,
-    )) {
+    if (!(Position.topLeft & size).containsRect(position & extension.size)) {
       return;
     }
-    for (int j = 0; j < renderExtension.size.height; j++) {
-      for (int i = 0; i < renderExtension.size.width; i++) {
-        late final ForegroundCellExtension extension;
-        if (j == 0 && i == 0) {
-          extension = renderExtension;
-        } else {
-          extension = CoveredTerminalCellExtension(position);
-        }
-        _data[j][i].drawExtension(background, extension);
+    final cell = _data[position.y][position.x];
+    if (cell.extension != null) {
+      invalidateExtension(position);
+    }
+    cell
+      ..extension = extension
+      ..changed = true;
+    for (int j = 0; j < extension.size.height; j++) {
+      for (int i = 0; i < extension.size.width; i++) {
+        final cell = _data[j][i];
+        cell.newBg = background;
+        cell.calculateDifference();
+        cell.changed = false;
+      }
+    }
+  }
+
+  void invalidateExtension(Position cellPos) {
+    final extensionCell = _data[cellPos.y][cellPos.x];
+    final extension = extensionCell.extension!;
+    extensionCell.extension = null;
+    for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
+      _changeList[y] = true;
+      final row = getRow(y);
+      for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
+        final cell = row[x];
+        cell.changed = true;
+        cell.newFg = Foreground();
       }
     }
   }
@@ -366,7 +403,7 @@ abstract class BufferTerminalViewport extends TerminalViewport {
         _data[charPos.y][charPos.x].draw(foreground, style.backgroundColor);
       } else {
         // if width == 2 will check if sticks out right
-        _drawRenderExtension(
+        _drawExtension(
           CharacterCellExtension(width, character),
           Position(x, position.y),
           style.backgroundColor ?? const Color.normal(),

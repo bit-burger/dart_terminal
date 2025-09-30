@@ -21,6 +21,10 @@ void main() async {
     ),
   );
   await Future.delayed(Duration(milliseconds: 500));
+  viewport.cursor = CursorState(
+    position: Position(1, 1),
+    type: CursorType.verticalBar,
+  );
   int plus = 0;
 
   while (true) {

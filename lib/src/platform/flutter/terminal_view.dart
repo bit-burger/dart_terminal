@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:dart_terminal/core.dart' as term;
 import 'package:dart_terminal/core.dart' hide Offset, Color, Colors, Rect, Size;
 import '../../core/style.dart' as s;
+import '../shared/buffer_terminal_viewport.dart';
 import 'buffer.dart';
 import 'flutter_terminal_viewport.dart';
 import 'gesture_handling.dart';
@@ -331,7 +332,7 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
   void _paint(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
 
-    final lines = terminalViewport.visibleBuffer;
+    final rows = terminalViewport.size.height;
     final charHeight = _painter.cellSize.height;
 
     final firstLineOffset = 0 - _padding.top;
@@ -340,14 +341,14 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
     final firstLine = firstLineOffset ~/ charHeight;
     final lastLine = lastLineOffset ~/ charHeight;
 
-    final effectFirstLine = firstLine.clamp(0, lines.length - 1);
-    final effectLastLine = lastLine.clamp(0, lines.length - 1);
+    final effectFirstLine = firstLine.clamp(0, rows - 1);
+    final effectLastLine = lastLine.clamp(0, rows - 1);
 
     for (var i = effectFirstLine; i <= effectLastLine; i++) {
-      _painter.paintLine(
+      _painter.paintRow(
         canvas,
         offset.translate(0, (i * charHeight).truncateToDouble()),
-        lines[i],
+        terminalViewport.getRow(i),
       );
     }
 
@@ -458,63 +459,58 @@ class TerminalPainter {
         return;
       case CursorType.underline:
         return canvas.drawLine(
-          Offset(offset.dx, _cellSize.height - 1),
-          Offset(offset.dx + _cellSize.width, _cellSize.height - 1),
+          Offset(offset.dx, offset.dy + _cellSize.height - 1),
+          Offset(offset.dx + _cellSize.width, offset.dy + _cellSize.height - 1),
           paint,
         );
       case CursorType.verticalBar:
         return canvas.drawLine(
-          Offset(offset.dx, 0),
-          Offset(offset.dx, _cellSize.height),
+          Offset(offset.dx, offset.dy + 0),
+          Offset(offset.dx, offset.dy + _cellSize.height),
           paint,
         );
     }
   }
 
-  /// Paints [line] to [canvas] at [offset]. The x offset of [offset] is usually
+  /// Paints [row] to [canvas] at [offset]. The x offset of [offset] is usually
   /// 0, and the y offset is the top of the line.
-  void paintLine(Canvas canvas, Offset offset, BufferLine line) {
+  void paintRow(Canvas canvas, Offset offset, List<TerminalCell> row) {
     final cellWidth = _cellSize.width;
 
-    for (var i = 0; i < line.length; i++) {
-      final contentData = line.getContent(i);
-      final fgColorData = line.getForeground(i);
-      final bgColorData = line.getBackground(i);
-      final textEffectsData = line.getAttributes(i);
-      final charWidth = contentData >> CellContent.widthShift;
+    for (var i = 0; i < row.length; i++) {
+      final cell = row[i];
       final cellOffset = offset.translate(i * cellWidth, 0);
 
-      paintCell(
-        canvas,
-        cellOffset,
-        contentData,
-        fgColorData,
-        bgColorData,
-        textEffectsData,
-      );
+      paintCell(canvas, cellOffset, cell);
 
-      if (charWidth == 2) {
-        i++;
-      }
+      // TODO
+      // if (charWidth == 2) {
+      //   i++;
+      // }
     }
   }
 
   @pragma('vm:prefer-inline')
-  void paintCell(
-    Canvas canvas,
-    Offset offset,
-    int contentData,
-    int fgColorData,
-    int bgColorData,
-    int textEffectsData,
-  ) {
-    paintCellBackground(canvas, offset, bgColorData, contentData);
+  void paintCell(Canvas canvas, Offset offset, TerminalCell cell) {
+    if (cell.fg == extensionForeground) return;
+    late final String grapheme;
+    bool doubleWidth = false;
+    if (cell.extension != null) {
+      final extension = cell.extension!;
+      if (extension is CharacterCellExtension) {
+        doubleWidth = true;
+        grapheme = extension.grapheme;
+      }
+    } else {
+      grapheme = String.fromCharCode(cell.fg.codeUnit);
+    }
+    paintCellBackground(canvas, offset, cell.bg, doubleWidth: doubleWidth);
     paintCellForeground(
       canvas,
       offset,
-      fgColorData,
-      contentData,
-      textEffectsData,
+      grapheme,
+      cell.fg.color,
+      cell.fg.effects,
     );
   }
 
@@ -524,21 +520,18 @@ class TerminalPainter {
   void paintCellForeground(
     Canvas canvas,
     Offset offset,
-    int colorData,
-    int contentData,
-    int textEffectsData,
+    String grapheme,
+    s.Color color,
+    s.TextEffects textEffects,
   ) {
-    final charCode = contentData & CellContent.codepointMask;
-    if (charCode == 0) return;
-
+    final colorData = s.colorData(color);
     final cacheKey =
-        hashValues(colorData, contentData, textEffectsData) ^
-        _textScaler.hashCode;
+        hashValues(grapheme, color, textEffects) ^ _textScaler.hashCode;
     var paragraph = _paragraphCache.getLayoutFromCache(cacheKey);
 
     if (paragraph == null) {
+      // TODO: handle possibility that not exactly the same
       Color color = resolveColor(colorData);
-      final textEffects = s.textEffectsFromData(textEffectsData);
 
       if (s.TextEffect.faint.containedIn(textEffects)) {
         color = color.withValues(alpha: 0.5);
@@ -557,13 +550,12 @@ class TerminalPainter {
       // workaround the regular space CodePoint 0x20 is replaced with
       // the CodePoint 0xA0. This is a non breaking space and a underline can be
       // drawn below it.
-      var char = String.fromCharCode(charCode);
-      if (s.TextEffect.underline.containedIn(textEffects) && charCode == 0x20) {
-        char = String.fromCharCode(0xA0);
+      if (s.TextEffect.underline.containedIn(textEffects) && grapheme == " ") {
+        grapheme = String.fromCharCode(0xA0);
       }
 
       paragraph = _paragraphCache.performAndCacheLayout(
-        char,
+        grapheme,
         style,
         _textScaler,
         cacheKey,
@@ -579,15 +571,15 @@ class TerminalPainter {
   void paintCellBackground(
     Canvas canvas,
     Offset offset,
-    int colorData,
-    int contentData,
-  ) {
+    s.Color sColor, {
+    bool doubleWidth = false,
+  }) {
+    final colorData = s.colorData(sColor);
     final colorType = s.colorTypeFromData(colorData);
     if (colorType == s.colorNormalType) return;
     final color = resolveColor(colorData);
 
     final paint = Paint()..color = color;
-    final doubleWidth = contentData >> CellContent.widthShift == 2;
     final widthScale = doubleWidth ? 2 : 1;
     final size = Size(_cellSize.width * widthScale + 1, _cellSize.height);
     canvas.drawRect(offset & size, paint);
