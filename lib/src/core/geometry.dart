@@ -36,6 +36,8 @@ extension type const Offset._(({int dx, int dy}) _) {
 
   Offset operator *(int factor) =>
       Offset._((dx: _.dx * factor, dy: _.dy * factor));
+
+  Offset operator -() => this * -1;
 }
 
 const e1 = Offset(1, 0);
@@ -62,6 +64,11 @@ extension type const Position._(({int x, int y}) _) {
   ///
   /// Returns a new position offset by [v].
   Position operator +(Offset v) => Position(x + v.dx, y + v.dy);
+
+  /// Translates this position by the given offset.
+  ///
+  /// Returns a new position offset by -[v].
+  Position operator -(Offset v) => Position(x - v.dx, y - v.dy);
 
   /// The horizontal coordinate of this position.
   int get x => _.x;

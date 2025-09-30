@@ -3,7 +3,6 @@ import 'dart:io' as io;
 
 // Project imports:
 import 'package:dart_terminal/core.dart';
-import 'package:flutter/animation.dart';
 import '../../core/style.dart';
 import '../shared/buffer_viewport.dart';
 import '../shared/size_tracker.dart';
@@ -123,13 +122,21 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
         final cell = row[x];
         final cellPos = Position(x, y);
         if (cell.changed) {
-          if (cell.extension != null && _tryRenderExtension(cell, cellPos)) {
+          final grapheme = cell.grapheme;
+          if (grapheme != null && validateGraphemeAndCalculateDiff(cellPos)) {
+            if (!grapheme.isSecond) {
+              _moveCursorInBuff(cellPos);
+              _cursorPosition += e1 * grapheme.width;
+              _transition(cell.fg.style, cell.bg);
+              _redrawBuff.write(grapheme.data);
+              cell.changed = false;
+              x += grapheme.width - 1;
+            }
             continue;
           }
           if (cell.calculateDifference()) {
-            if (cellPos != _cursorPosition) {
-              _redrawBuff.write(ansi_codes.cursorTo(y + 1, x + 1));
-            }
+            _moveCursorInBuff(cellPos);
+            _cursorPosition += e1;
             _transition(cell.fg.style, cell.bg);
             _redrawBuff.writeCharCode(cell.fg.codeUnit);
             cell.changed = false;
@@ -137,40 +144,20 @@ class AnsiTerminalViewport extends BufferTerminalViewport {
         }
       }
     }
+    // cursor position should remain unchanged if cursor visible
+    if (!_cursorHidden) {
+      _moveCursorInBuff(oldCursorPosition);
+    }
     io.stdout.write(_redrawBuff.toString());
     _redrawBuff.clear();
-    // cursor position should remain unchanged if cursor visible
-    if (oldCursorPosition != _cursorPosition && !_cursorHidden) {
-      _controller.setCursorPositionRelative(_cursorPosition, oldCursorPosition);
-      _cursorPosition = oldCursorPosition;
-    }
   }
 
-  /// try to render an extension and if it succeeds return true
-  bool _tryRenderExtension(TerminalCell renderCell, Position cellPos) {
-    return true;
-    final extension = renderCell.extension!;
-    for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
-      final row = getRow(y);
-      for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
-        final cell = row[x];
-        if ((cell.changed || cell.isDifferent()) || cell.extension != null) {
-          // extension is invalid as something has been drawn on top of it
-          return false;
-        }
-      }
-    }
-    for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
-      final row = getRow(y);
-      for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
-        if (row[x].fg != null) {
-          // extension is invalid as something has been drawn on top of it
-        }
-      }
-    }
-    if (extension is CharacterCellExtension) {
-      _redrawBuff.write(extension.grapheme);
-    }
+  void _moveCursorInBuff(Position newPosition) {
+    if (newPosition == _cursorPosition) return;
+    _redrawBuff.write(
+      ansi_codes.cursorTo(newPosition.y + 1, newPosition.x + 1),
+    );
+    _cursorPosition = newPosition;
   }
 
   bool _firstParameter = true;

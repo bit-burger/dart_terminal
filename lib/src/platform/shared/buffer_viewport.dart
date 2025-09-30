@@ -11,56 +11,17 @@ const int _rightBorderMask = 1 << 61;
 const int _bottomBorderMask = 1 << 60;
 const int _borderDrawIdMask = ~(0xF << 60);
 
-/// marks the foreground that an extension has painted this
-const extensionForeground = Foreground(codeUnit: 0);
+/// marks the foreground that it should not be painted
+const noPaintCodeUnit = 0;
+Foreground noPaintFg(ForegroundStyle style) =>
+    Foreground(style: style, codeUnit: noPaintCodeUnit);
 
-/// an extension for [TerminalCell]s,
-/// is on the same layer as the foreground
-/// and therefore replaces it.
-///
-/// The size of the object that is rendered is [size].
-/// Only write an extension into the buffer if the [size] fits.
-/// In this area there should only be the the [ForegroundCellExtension]
-/// on the top left and all other cells foreground should not be changed
-/// after setting the extension.
-///
-/// Therefore setting an extension means:
-/// - setting the [TerminalCell.fg] to [extensionForeground]
-/// - setting [TerminalCell.changed] to `false`
-/// - setting [TerminalCell.extension] to `null`
-///   and if it was not 0 before invalidating the complete extension
-///
-/// Before updating a screen it should be checked
-/// if all extensions are still valid (otherwise invalidate it):
-/// - check if [TerminalCell.extension] is `null` everywhere
-///   (except the top left which is the extension itself)
-/// - check if [TerminalCell.fg] is [extensionForeground]
-/// - check if another extension is found in the area of the extension,
-///   and invalidate the newer extension (check via [extensionTimestamp])
-///   except if both extensions are of the same type and [supportStacking]
-///   is true
-///
-/// To invalidate an extension:
-/// - set all the foregrounds to the default foreground
-/// - set changed to true on the extensions and all of its lines
-/// - set the [TerminalCell.extension] to `null` from the extension cell
-sealed class ForegroundCellExtension {
-  final Size size;
-  final int extensionTimestamp;
-  static int _extensionCount = 0;
-  final bool supportStacking;
+class Grapheme {
+  final String data;
+  final int width;
+  final bool isSecond;
 
-  ForegroundCellExtension(this.size, {this.supportStacking = false})
-    : extensionTimestamp = _extensionCount++;
-}
-
-/// to render a character that either isn't in the unicode BMP
-/// or has a with width greater than 1 (e.g emojis)
-/// and therefore requires special handling
-final class CharacterCellExtension extends ForegroundCellExtension {
-  final String grapheme;
-
-  CharacterCellExtension(int width, this.grapheme) : super(Size(width, 1));
+  Grapheme({required this.data, required this.width, required this.isSecond});
 }
 
 class TerminalCell {
@@ -70,10 +31,23 @@ class TerminalCell {
   Foreground? newFg;
   Color? newBg;
   int borderState = 0;
-  ForegroundCellExtension? extension;
+  Grapheme? grapheme;
 
   static List<TerminalCell> rowGen(int length) =>
       List.generate(length, (_) => TerminalCell());
+
+  void drawGrapheme(Grapheme? grapheme, ForegroundStyle fg, Color? bg) {
+    draw(
+      grapheme != null
+          ? Foreground(style: fg, codeUnit: noPaintCodeUnit)
+          : Foreground(style: fg),
+      bg,
+    );
+    if (grapheme != this.grapheme) {
+      this.grapheme = grapheme;
+      changed = true;
+    }
+  }
 
   void draw(Foreground? fg, Color? bg) {
     assert(fg != null || bg != null);
@@ -115,7 +89,7 @@ class TerminalCell {
     fg = foreground;
     bg = background;
     newFg = newBg = null;
-    extension = null;
+    grapheme = null;
     changed = false;
     // borderState does not need to be reset as the
     // BorderIdentifier should not be reused between resets
@@ -164,7 +138,8 @@ abstract class BufferTerminalViewport extends TerminalViewport {
     return changed;
   }
 
-  List<TerminalCell> getRow(int row) => _data[row];
+  List<TerminalCell> getRow(int y) => _data[y];
+  TerminalCell getCell(Position position) => _data[position.y][position.x];
 
   void resizeBuffer() {
     if (_dataSize.height < size.height) {
@@ -341,45 +316,87 @@ abstract class BufferTerminalViewport extends TerminalViewport {
     }
   }
 
-  /// draws the [extension]
-  void _drawExtension(
-    ForegroundCellExtension extension,
+  void _tryDrawGrapheme(
+    String grapheme,
+    TextStyle style,
+    int width,
     Position position,
-    Color background,
   ) {
-    if (!(Position.topLeft & size).containsRect(position & extension.size)) {
-      return;
-    }
-    final cell = _data[position.y][position.x];
-    if (cell.extension != null) {
-      invalidateExtension(position);
-    }
-    cell
-      ..extension = extension
-      ..changed = true;
-    for (int j = 0; j < extension.size.height; j++) {
-      for (int i = 0; i < extension.size.width; i++) {
-        final cell = _data[j][i];
-        cell.newBg = background;
-        cell.calculateDifference();
-        cell.changed = false;
+    final rect = Position.topLeft & size;
+    final cell = getCell(position);
+    // check if on field before is 2 wide grapheme (eliminate it)
+    if (cell.grapheme?.isSecond == true) {
+      final beforeCell = getCell(position - e1);
+      if (beforeCell.grapheme?.width == 2) {
+        beforeCell.drawGrapheme(null, ForegroundStyle(), null);
       }
+    } else if (cell.grapheme != null) {
+      // if replacing a grapheme with a smaller grapheme
+      _clearGrapheme(position);
     }
+    if (width == 2) {
+      // will check if sticks out right
+      if (!rect.contains(position + e1)) return;
+      // will check if on right cell there is already
+      final afterCell = getCell(position + e1);
+      if (afterCell.grapheme != null) {
+        _clearGrapheme(position + e1);
+      }
+      afterCell
+        ..drawGrapheme(
+          Grapheme(data: grapheme, width: width, isSecond: true),
+          style.fgStyle,
+          style.backgroundColor,
+        )
+        ..changed = false;
+    }
+    cell.drawGrapheme(
+      Grapheme(data: grapheme, width: width, isSecond: false),
+      style.fgStyle,
+      style.backgroundColor,
+    );
   }
 
-  void invalidateExtension(Position cellPos) {
-    final extensionCell = _data[cellPos.y][cellPos.x];
-    final extension = extensionCell.extension!;
-    extensionCell.extension = null;
-    for (int y = cellPos.y; y < extension.size.height + cellPos.y; y++) {
-      _changeList[y] = true;
-      final row = getRow(y);
-      for (int x = cellPos.x; x < extension.size.width + cellPos.x; x++) {
-        final cell = row[x];
-        cell.changed = true;
+  bool validateGraphemeAndCalculateDiff(Position position) {
+    final cell = getCell(position);
+    final grapheme = cell.grapheme!;
+    if (grapheme.isSecond == true) {
+      position = position - e1;
+    }
+    if ((cell.newFg != null && cell.newFg?.codeUnit != noPaintCodeUnit) ||
+        (grapheme.width == 2 &&
+            getCell(position + e1).newFg != null &&
+            getCell(position + e1).newFg?.codeUnit != noPaintCodeUnit)) {
+      cell.changed = true;
+      cell.grapheme = null;
+      if (cell.newFg == null || cell.newFg!.codeUnit == noPaintCodeUnit) {
         cell.newFg = Foreground();
       }
+      if (grapheme.width == 2) {
+        final cell = getCell(position + e1);
+        cell.changed = true;
+        cell.grapheme = null;
+        if (cell.newFg == null || cell.newFg!.codeUnit == noPaintCodeUnit) {
+          cell.newFg = Foreground();
+        }
+      }
+      return false;
     }
+    cell
+      ..fg = cell.newFg ?? cell.fg
+      ..newFg = null
+      ..bg = cell.newBg ?? cell.bg
+      ..newBg = null;
+    return true;
+  }
+
+  // give position of the first cell of the grapheme
+  void _clearGrapheme(Position position) {
+    final cell = getCell(position);
+    if (cell.grapheme!.width == 2) {
+      getCell(position + e1).drawGrapheme(null, ForegroundStyle(), null);
+    }
+    cell.drawGrapheme(null, ForegroundStyle(), null);
   }
 
   @override
@@ -389,9 +406,9 @@ abstract class BufferTerminalViewport extends TerminalViewport {
     TextStyle style = const TextStyle(),
   }) {
     _changeList[position.y] = true;
-    int x = position.x;
+    Position charPos = position;
+    final row = getRow(position.y);
     for (final character in text.characters) {
-      final charPos = Position(x, position.y);
       if (!(Position.topLeft & size).contains(charPos)) continue;
       final width = character.wcwidth();
       if (width == 1 && character.length == 1) {
@@ -400,16 +417,11 @@ abstract class BufferTerminalViewport extends TerminalViewport {
           style: style.fgStyle,
           codeUnit: character.codeUnitAt(0),
         );
-        _data[charPos.y][charPos.x].draw(foreground, style.backgroundColor);
+        row[charPos.x].draw(foreground, style.backgroundColor);
       } else {
-        // if width == 2 will check if sticks out right
-        _drawExtension(
-          CharacterCellExtension(width, character),
-          Position(x, position.y),
-          style.backgroundColor ?? const Color.normal(),
-        );
+        _tryDrawGrapheme(character, style, width, charPos);
       }
-      x += width;
+      charPos += e1 * width;
     }
   }
 }

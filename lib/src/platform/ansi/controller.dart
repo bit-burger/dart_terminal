@@ -23,7 +23,7 @@ class AnsiTerminalController {
   ///
   /// Coordinates are 1-based, where (1,1) is the top-left corner.
   void setCursorPosition(Position position) {
-    io.stdout.write(ansi_codes.cursorTo(position.x + 1, position.y + 1));
+    io.stdout.write(ansi_codes.cursorTo(position.y + 1, position.x + 1));
   }
 
   /// Moves the cursor to the specified position relative to [currX] and [currY]
